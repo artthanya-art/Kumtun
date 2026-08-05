@@ -556,6 +556,7 @@
           '<select id="v-compare-mode">',
             '<option value="ice">รถน้ำมันที่จะซื้อแทน</option>',
             '<option value="nocar">ไม่มีรถ ใช้บริการเดินทางแทน</option>',
+            '<option value="keepold">ไม่ซื้อรถ ใช้รถเดิมต่อ</option>',
           '</select></div>',
         '</div>',
         '<div id="v-ice-fields" class="ref-box">',
@@ -572,6 +573,22 @@
           '<div class="field-row single">',
             '<div class="field"><label>ค่าใช้จ่ายเดินทางทางเลือกต่อเดือน (ถ้าไม่มีรถ) <span class="hint">บาท/เดือน</span></label><input type="number" id="v-nocar-cost" value="3500" min="0"/>',
             '<span class="note">รวมค่ารถไฟฟ้า/รถเมล์/แท็กซี่/มอเตอร์ไซค์รับจ้าง/Grab ที่ต้องจ่ายทั้งเดือนถ้าไม่มีรถส่วนตัว</span></div>',
+          '</div>',
+        '</div>',
+        '<div id="v-keepold-fields" class="ref-box" style="display:none;">',
+          '<div class="ref-box-label">ข้อมูลอ้างอิง — รถเดิมที่ใช้อยู่ (ไม่ใช่รถ BEV)</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>อัตราสิ้นเปลืองรถเดิมที่ใช้อยู่ <span class="hint">กม./ลิตร</span></label><input type="number" id="v-keepold-kmpl" value="10" min="0.1" step="0.1"/>',
+            '<span class="note">ยิ่งรถเก่ากินน้ำมันมากขึ้น ให้ปรับตัวเลขนี้ลงตามจริง</span></div>',
+          '</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>ค่าอะไหล่ชิ้นใหญ่ที่รถเดิมน่าจะต้องเปลี่ยน (ระบุปีได้)</label>',
+            '<div id="v-repair-rows"></div>',
+            '<div class="period-actions">',
+              '<button type="button" class="btn-add-period" id="v-repair-add-btn">+ เพิ่มรายการ</button>',
+              '<span class="note" id="v-repair-empty-note">ไม่มีรายการ</span>',
+            '</div>',
+            '<span class="note">เช่น เปลี่ยนแบตเตอรี่ 12V, ช่วงล่าง, ระบบเกียร์, แอร์ — ค่าใช้จ่ายเหล่านี้จะ “ประหยัดได้” ถ้าเปลี่ยนมาใช้รถใหม่แทน จึงถูกนับเป็นผลประหยัดในปีที่ระบุ นอกเหนือจากค่าน้ำมันที่ประหยัดได้ทุกเดือน</span></div>',
           '</div>',
         '</div>',
         '<div class="field-row">',
@@ -591,9 +608,18 @@
       document.getElementById('v-compare-mode').addEventListener('change', function(){
         document.getElementById('v-ice-fields').style.display = this.value==='ice' ? 'block' : 'none';
         document.getElementById('v-nocar-fields').style.display = this.value==='nocar' ? 'block' : 'none';
+        document.getElementById('v-keepold-fields').style.display = this.value==='keepold' ? 'block' : 'none';
         updateBevPreview(); calculate();
       });
-      ['v-bev-price','v-bev-resale','v-ref-price','v-ref-resale','v-kmpl','v-nocar-cost',
+      document.getElementById('v-repair-add-btn').addEventListener('click', function(){
+        document.getElementById('v-repair-rows').appendChild(createYearAmountRow(5, 15000, ()=>{
+          updateEmptyNote('v-repair-rows','v-repair-empty-note'); updateBevPreview(); calculate();
+        }));
+        updateEmptyNote('v-repair-rows','v-repair-empty-note');
+        calculate();
+      });
+      updateEmptyNote('v-repair-rows','v-repair-empty-note');
+      ['v-bev-price','v-bev-resale','v-ref-price','v-ref-resale','v-kmpl','v-nocar-cost','v-keepold-kmpl',
        'v-distance','v-fuel-price','v-kwh100','v-home-share','v-public-rate'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateBevPreview(); calculate(); });
       });
@@ -620,6 +646,7 @@
           '<select id="h-compare-mode">',
             '<option value="ice">รถน้ำมันทั่วไปที่จะซื้อแทน</option>',
             '<option value="nocar">ไม่มีรถ ใช้บริการเดินทางแทน</option>',
+            '<option value="keepold">ไม่ซื้อรถ ใช้รถเดิมต่อ</option>',
           '</select></div>',
         '</div>',
         '<div id="h-ice-fields" class="ref-box">',
@@ -636,6 +663,22 @@
           '<div class="field-row single">',
             '<div class="field"><label>ค่าใช้จ่ายเดินทางทางเลือกต่อเดือน (ถ้าไม่มีรถ) <span class="hint">บาท/เดือน</span></label><input type="number" id="h-nocar-cost" value="3500" min="0"/>',
             '<span class="note">รวมค่ารถไฟฟ้า/รถเมล์/แท็กซี่/มอเตอร์ไซค์รับจ้าง/Grab ที่ต้องจ่ายทั้งเดือนถ้าไม่มีรถส่วนตัว</span></div>',
+          '</div>',
+        '</div>',
+        '<div id="h-keepold-fields" class="ref-box" style="display:none;">',
+          '<div class="ref-box-label">ข้อมูลอ้างอิง — รถเดิมที่ใช้อยู่ (ไม่ใช่รถไฮบริด)</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>อัตราสิ้นเปลืองรถเดิมที่ใช้อยู่ <span class="hint">กม./ลิตร</span></label><input type="number" id="h-keepold-kmpl" value="10" min="0.1" step="0.1"/>',
+            '<span class="note">ยิ่งรถเก่ากินน้ำมันมากขึ้น ให้ปรับตัวเลขนี้ลงตามจริง</span></div>',
+          '</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>ค่าอะไหล่ชิ้นใหญ่ที่รถเดิมน่าจะต้องเปลี่ยน (ระบุปีได้)</label>',
+            '<div id="h-repair-rows"></div>',
+            '<div class="period-actions">',
+              '<button type="button" class="btn-add-period" id="h-repair-add-btn">+ เพิ่มรายการ</button>',
+              '<span class="note" id="h-repair-empty-note">ไม่มีรายการ</span>',
+            '</div>',
+            '<span class="note">เช่น เปลี่ยนแบตเตอรี่ 12V, ช่วงล่าง, ระบบเกียร์, แอร์ — ค่าใช้จ่ายเหล่านี้จะ “ประหยัดได้” ถ้าเปลี่ยนมาใช้รถใหม่แทน จึงถูกนับเป็นผลประหยัดในปีที่ระบุ นอกเหนือจากค่าน้ำมันที่ประหยัดได้ทุกเดือน</span></div>',
           '</div>',
         '</div>',
         '<div class="field-row">',
@@ -670,13 +713,22 @@
       document.getElementById('h-compare-mode').addEventListener('change', function(){
         document.getElementById('h-ice-fields').style.display = this.value==='ice' ? 'block' : 'none';
         document.getElementById('h-nocar-fields').style.display = this.value==='nocar' ? 'block' : 'none';
+        document.getElementById('h-keepold-fields').style.display = this.value==='keepold' ? 'block' : 'none';
         updateHybridPreview(); calculate();
       });
       document.getElementById('h-phev-mode').addEventListener('change', function(){
         document.getElementById('h-phev-fields').style.display = this.value==='phev' ? 'block' : 'none';
         updateHybridPreview(); calculate();
       });
-      ['h-price','h-resale','h-ref-price','h-ref-resale','h-kmpl-old','h-nocar-cost',
+      document.getElementById('h-repair-add-btn').addEventListener('click', function(){
+        document.getElementById('h-repair-rows').appendChild(createYearAmountRow(5, 15000, ()=>{
+          updateEmptyNote('h-repair-rows','h-repair-empty-note'); updateHybridPreview(); calculate();
+        }));
+        updateEmptyNote('h-repair-rows','h-repair-empty-note');
+        calculate();
+      });
+      updateEmptyNote('h-repair-rows','h-repair-empty-note');
+      ['h-price','h-resale','h-ref-price','h-ref-resale','h-kmpl-old','h-nocar-cost','h-keepold-kmpl',
        'h-distance','h-fuel-price','h-kmpl-new','h-ev-share','h-ev-kwh100','h-home-share','h-public-rate'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateHybridPreview(); calculate(); });
       });
@@ -880,8 +932,8 @@
     el.dataset.prev = val;
   }
 
-  /* ---------- Major CAPEX events (เปลี่ยนอะไหล่/บำรุงรักษาใหญ่ ระบุปีได้) ---------- */
-  function createCapexRow(year, amount){
+  /* ---------- Generic "ปีที่ / จำนวนเงิน" row list (ใช้ร่วมกันหลายจุด) ---------- */
+  function createYearAmountRow(year, amount, onChange){
     const row = document.createElement('div');
     row.className = 'capex-row';
     row.innerHTML = [
@@ -890,23 +942,23 @@
       '<button type="button" class="cx-remove" title="ลบรายการนี้">✕</button>'
     ].join('');
     row.querySelectorAll('input').forEach(inp=>{
-      inp.addEventListener('input', calculate);
+      inp.addEventListener('input', onChange);
     });
     row.querySelector('.cx-remove').addEventListener('click', ()=>{
       row.remove();
-      updateCapexEmptyNote();
-      calculate();
+      onChange();
     });
     return row;
   }
 
-  function updateCapexEmptyNote(){
-    const count = document.querySelectorAll('#capex-rows .capex-row').length;
-    document.getElementById('capex-empty-note').style.display = count===0 ? 'inline' : 'none';
+  function updateEmptyNote(containerId, noteId){
+    const count = document.querySelectorAll('#'+containerId+' .capex-row').length;
+    const el = document.getElementById(noteId);
+    if(el) el.style.display = count===0 ? 'inline' : 'none';
   }
 
-  function getMajorCapexEvents(){
-    const rows = document.querySelectorAll('#capex-rows .capex-row');
+  function getEventsFromContainer(containerId){
+    const rows = document.querySelectorAll('#'+containerId+' .capex-row');
     const events = [];
     rows.forEach(r=>{
       const year = parseInt(r.querySelector('.cx-year').value)||0;
@@ -914,6 +966,22 @@
       if(year>0 && amount>0) events.push({year, amount});
     });
     return events;
+  }
+
+  /* ---------- Major CAPEX events (เปลี่ยนอะไหล่/บำรุงรักษาใหญ่ ระบุปีได้ — หัวข้อเงินลงทุนกลาง) ---------- */
+  function createCapexRow(year, amount){
+    return createYearAmountRow(year, amount, ()=>{
+      updateEmptyNote('capex-rows','capex-empty-note');
+      calculate();
+    });
+  }
+
+  function updateCapexEmptyNote(){
+    updateEmptyNote('capex-rows','capex-empty-note');
+  }
+
+  function getMajorCapexEvents(){
+    return getEventsFromContainer('capex-rows');
   }
 
   function createPeriodRow(start,end,pct){
@@ -1159,13 +1227,18 @@
     const homeRate = parseFloat(document.getElementById('f-elec-rate').value)||0;
     const co2Factor = parseFloat(document.getElementById('f-co2').value)||0;
 
-    let refPrice=0, refResale=0, baselineCostAvoided=0, litersAvoided=0;
+    let refPrice=0, refResale=0, baselineCostAvoided=0, litersAvoided=0, repairEvents=[];
     if(compareMode==='ice'){
       refPrice = parseFloat(document.getElementById('v-ref-price').value)||0;
       refResale = parseFloat(document.getElementById('v-ref-resale').value)||0;
       const kmpl = parseFloat(document.getElementById('v-kmpl').value)||0.1;
       litersAvoided = kmpl>0 ? distance/kmpl : 0;
       baselineCostAvoided = litersAvoided*fuelPrice;
+    } else if(compareMode==='keepold'){
+      const kmpl = parseFloat(document.getElementById('v-keepold-kmpl').value)||0.1;
+      litersAvoided = kmpl>0 ? distance/kmpl : 0;
+      baselineCostAvoided = litersAvoided*fuelPrice;
+      repairEvents = getEventsFromContainer('v-repair-rows'); // ไม่มีรถเทียบเคียงให้ซื้อ ไม่มีราคาซื้อ/ขายคืนฝั่งเทียบเคียง
     } else { // nocar
       baselineCostAvoided = parseFloat(document.getElementById('v-nocar-cost').value)||0;
     }
@@ -1173,12 +1246,12 @@
     const kwhUsed = distance/100*kwh100;
     const elecCost = kwhUsed*homeShare*homeRate + kwhUsed*(1-homeShare)*publicRate;
     const monthlySavings = baselineCostAvoided - elecCost;
-    const monthlyCo2Kg = (compareMode==='ice' ? litersAvoided*PETROL_CO2_PER_LITER : 0) - kwhUsed*co2Factor;
+    const monthlyCo2Kg = (compareMode==='ice' || compareMode==='keepold' ? litersAvoided*PETROL_CO2_PER_LITER : 0) - kwhUsed*co2Factor;
 
     const investmentPremium = bevPrice - refPrice;
     const salvageBaht = bevResale - refResale; // ทั้งสองค่าคือราคาขาย ณ ปีที่ใช้จริง (จำนวนปีที่จะใช้รถ) ไม่ต้องคำนวณค่าเสื่อมราคาซ้อน
 
-    return { baselineCostAvoided, elecCost, monthlySavings, monthlyCo2Kg, kwhUsed, investmentPremium, salvageBaht, compareMode };
+    return { baselineCostAvoided, elecCost, monthlySavings, monthlyCo2Kg, kwhUsed, investmentPremium, salvageBaht, compareMode, repairEvents };
   }
 
   function investmentWarningRow(investmentPremium, compareMode){
@@ -1196,12 +1269,18 @@
   function updateBevPreview(){
     const r = computeBevDetail();
     applyVehicleInvestment(r.investmentPremium, r.salvageBaht);
+    const baselineLabel = r.compareMode==='ice' ? 'ค่าน้ำมันที่ประหยัดได้'
+      : (r.compareMode==='keepold' ? 'ค่าน้ำมันรถเดิมที่ประหยัดได้' : 'ค่าเดินทางทางเลือกที่ไม่ต้องจ่าย');
     const rows = [
-      (r.compareMode==='ice' ? 'ค่าน้ำมันที่ประหยัดได้' : 'ค่าเดินทางทางเลือกที่ไม่ต้องจ่าย')+' ~'+Math.round(r.baselineCostAvoided).toLocaleString('th-TH')+' บาท/เดือน',
+      baselineLabel+' ~'+Math.round(r.baselineCostAvoided).toLocaleString('th-TH')+' บาท/เดือน',
       'ค่าไฟชาร์จที่ต้องจ่าย ~'+Math.round(r.elecCost).toLocaleString('th-TH')+' บาท/เดือน ('+r.kwhUsed.toFixed(0)+' หน่วย)',
       '<b>ประหยัดสุทธิ: '+Math.round(r.monthlySavings).toLocaleString('th-TH')+' บาท/เดือน</b>',
       'เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ (ราคาขาย ณ ปีที่ระบุ): '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท'
     ];
+    if(r.compareMode==='keepold' && r.repairEvents.length>0){
+      const total = r.repairEvents.reduce((s,e)=>s+e.amount,0);
+      rows.push('ค่าอะไหล่รถเดิมที่ประหยัดได้เพิ่ม: '+fmt0(total)+' บาท รวม '+r.repairEvents.length+' รายการ (นับในปีที่ระบุแต่ละรายการ)');
+    }
     const warn = investmentWarningRow(Math.round(r.investmentPremium), r.compareMode);
     if(warn) rows.push(warn);
     document.getElementById('v-bev-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
@@ -1234,7 +1313,7 @@
     // อัตราสิ้นเปลืองเทียบเท่าตลอดทั้งทริป (รวมช่วงที่ขับด้วยไฟฟ้าล้วนซึ่งไม่ใช้น้ำมันเลย)
     const effectiveKmpl = litersNew>0 ? distance/litersNew : null;
 
-    let refPrice=0, refResale=0, monthlySavings=0, monthlyCo2Kg=0, litersSaved=0;
+    let refPrice=0, refResale=0, monthlySavings=0, monthlyCo2Kg=0, litersSaved=0, repairEvents=[];
     if(compareMode==='ice'){
       refPrice = parseFloat(document.getElementById('h-ref-price').value)||0;
       refResale = parseFloat(document.getElementById('h-ref-resale').value)||0;
@@ -1243,6 +1322,13 @@
       litersSaved = Math.max(litersOld-litersNew,0);
       monthlySavings = litersSaved*fuelPrice - elecCost;
       monthlyCo2Kg = litersSaved*PETROL_CO2_PER_LITER - kwhUsed*co2Factor;
+    } else if(compareMode==='keepold'){
+      const kmplOld = parseFloat(document.getElementById('h-keepold-kmpl').value)||0.1;
+      const litersOld = kmplOld>0 ? distance/kmplOld : 0;
+      litersSaved = Math.max(litersOld-litersNew,0);
+      monthlySavings = litersSaved*fuelPrice - elecCost;
+      monthlyCo2Kg = litersSaved*PETROL_CO2_PER_LITER - kwhUsed*co2Factor;
+      repairEvents = getEventsFromContainer('h-repair-rows'); // ไม่มีรถเทียบเคียงให้ซื้อ ไม่มีราคาซื้อ/ขายคืนฝั่งเทียบเคียง
     } else { // nocar
       const noCarCost = parseFloat(document.getElementById('h-nocar-cost').value)||0;
       monthlySavings = noCarCost - hybridFuelCost - elecCost;
@@ -1252,13 +1338,13 @@
     const investmentPremium = hybridPrice - refPrice;
     const salvageBaht = hybridResale - refResale; // ทั้งสองค่าคือราคาขาย ณ ปีที่ใช้จริง (จำนวนปีที่จะใช้รถ) ไม่ต้องคำนวณค่าเสื่อมราคาซ้อน
 
-    return { litersSaved, hybridFuelCost, elecCost, effectiveKmpl, phevMode, monthlySavings, monthlyCo2Kg, investmentPremium, salvageBaht, compareMode };
+    return { litersSaved, hybridFuelCost, elecCost, effectiveKmpl, phevMode, monthlySavings, monthlyCo2Kg, investmentPremium, salvageBaht, compareMode, repairEvents };
   }
 
   function updateHybridPreview(){
     const r = computeHybridDetail();
     applyVehicleInvestment(r.investmentPremium, r.salvageBaht);
-    const rows = r.compareMode==='ice'
+    const rows = (r.compareMode==='ice' || r.compareMode==='keepold')
       ? ['ลดการใช้น้ำมัน ~'+r.litersSaved.toFixed(1)+' ลิตร/เดือน']
       : ['ค่าน้ำมันที่ต้องจ่ายเอง ~'+Math.round(r.hybridFuelCost).toLocaleString('th-TH')+' บาท/เดือน'];
     if(r.phevMode==='phev'){
@@ -1267,6 +1353,10 @@
     }
     rows.push('<b>ประหยัดสุทธิ: '+Math.round(r.monthlySavings).toLocaleString('th-TH')+' บาท/เดือน</b>');
     rows.push('เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ (ราคาขาย ณ ปีที่ระบุ): '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท');
+    if(r.compareMode==='keepold' && r.repairEvents.length>0){
+      const total = r.repairEvents.reduce((s,e)=>s+e.amount,0);
+      rows.push('ค่าอะไหล่รถเดิมที่ประหยัดได้เพิ่ม: '+fmt0(total)+' บาท รวม '+r.repairEvents.length+' รายการ (นับในปีที่ระบุแต่ละรายการ)');
+    }
     const warn = investmentWarningRow(Math.round(r.investmentPremium), r.compareMode);
     if(warn) rows.push(warn);
     document.getElementById('v-hybrid-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
@@ -1445,6 +1535,14 @@
     if(capexEvents.length>0){
       items.push(['ค่าเปลี่ยนอะไหล่/บำรุงรักษาใหญ่', capexEvents.map(e=> 'ปี '+e.year+': '+fmt0(e.amount)+' บาท').join(', ')]);
     }
+    if(EQUIPMENT[activeTab].subcalc==='bev' && val('v-compare-mode')==='keepold'){
+      const rEvents = getEventsFromContainer('v-repair-rows');
+      if(rEvents.length>0) items.push(['ค่าอะไหล่รถเดิมที่ประหยัดได้', rEvents.map(e=>'ปี '+e.year+': '+fmt0(e.amount)+' บาท').join(', ')]);
+    }
+    if(EQUIPMENT[activeTab].subcalc==='hybrid' && val('h-compare-mode')==='keepold'){
+      const rEvents = getEventsFromContainer('h-repair-rows');
+      if(rEvents.length>0) items.push(['ค่าอะไหล่รถเดิมที่ประหยัดได้', rEvents.map(e=>'ปี '+e.year+': '+fmt0(e.amount)+' บาท').join(', ')]);
+    }
     if(!isWaterCalc){
       items.push(['อัตราค่าไฟฟ้าปัจจุบัน', val('f-elec-rate')+' บาท/หน่วย']);
     }
@@ -1545,6 +1643,14 @@
     const annualSpecial0 = specialKpi ? specialKpi.monthlyAmount()*12 : 0;
     const majorCapexEvents = getMajorCapexEvents();
 
+    // ค่าอะไหล่ชิ้นใหญ่ของ "รถเดิม" ที่จะประหยัดได้ ถ้าเปลี่ยนมาใช้รถใหม่แทน (เฉพาะโหมด "ไม่ซื้อรถ ใช้รถเดิมต่อ")
+    let vehicleRepairEvents = [];
+    if(EQUIPMENT[activeTab].subcalc==='bev' && document.getElementById('v-compare-mode').value==='keepold'){
+      vehicleRepairEvents = getEventsFromContainer('v-repair-rows');
+    } else if(EQUIPMENT[activeTab].subcalc==='hybrid' && document.getElementById('h-compare-mode').value==='keepold'){
+      vehicleRepairEvents = getEventsFromContainer('h-repair-rows');
+    }
+
     const years=[], grossSavingsArr=[], maintArr=[], netCFArr=[], ownerCFArr=[];
     let cumUndiscounted = -netInvestment; // asset-level payback (ignores financing structure)
     let cumOwner = -upfrontOutflow;
@@ -1558,7 +1664,8 @@
       const co2_t = annualCo2Kg0 * Math.pow(1-degradation,t-1);
       const special_t = annualSpecial0 * Math.pow(1-degradation,t-1);
       const capex_t = majorCapexEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
-      let assetNet_t = savings_t - maint_t - capex_t;
+      const repairAvoided_t = vehicleRepairEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
+      let assetNet_t = savings_t - maint_t - capex_t + repairAvoided_t;
       let ownerNet_t = assetNet_t - ((loanEnabled && t<=loanTerm) ? annualLoanPayment : 0);
       if(t===effectiveYears){
         const salvage = vehicleSalvageOverrideBaht!==null ? vehicleSalvageOverrideBaht : (cost*salvagePct/100);
@@ -1588,7 +1695,7 @@
 
       years.push(t);
       grossSavingsArr.push(savings_t);
-      maintArr.push(maint_t + capex_t + ((loanEnabled && t<=loanTerm)?annualLoanPayment:0));
+      maintArr.push(maint_t + capex_t - repairAvoided_t + ((loanEnabled && t<=loanTerm)?annualLoanPayment:0));
       netCFArr.push(ownerNet_t);
       ownerCFArr.push(cumOwner);
     }
