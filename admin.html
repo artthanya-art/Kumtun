@@ -102,9 +102,46 @@
 
   footer{border-top:1px solid var(--line);padding:26px 0 40px;margin-top:20px;}
   footer p{font-size:12px;color:var(--ink-faint);line-height:1.7;max-width:640px;}
+
+  #lock-screen{
+    position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;
+    padding:24px;z-index:100;
+  }
+  .lock-box{
+    background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);
+    padding:32px 28px;max-width:360px;width:100%;text-align:center;
+  }
+  .lock-box .brand{font-family:'Fraunces',serif;font-weight:700;font-size:24px;margin-bottom:10px;}
+  .lock-desc{font-size:13px;color:var(--ink-soft);line-height:1.6;margin:0 0 20px;}
+  #lock-password{
+    width:100%;font-family:'JetBrains Mono',monospace;font-size:15px;text-align:center;
+    border:1px solid var(--line);border-radius:8px;background:var(--paper);padding:11px;margin-bottom:12px;
+  }
+  #lock-password:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);}
+  #lock-submit{
+    width:100%;background:var(--primary);color:#fff;border:none;border-radius:9px;padding:11px;
+    font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  #lock-submit:hover{background:var(--primary-dark);}
+  .lock-error{color:var(--rust);font-size:12.5px;margin:12px 0 0;}
+  .lock-note{font-size:10.5px;color:var(--ink-faint);line-height:1.5;margin:18px 0 0;text-align:left;}
 </style>
 </head>
 <body>
+
+<!-- LOCK SCREEN -->
+<div id="lock-screen">
+  <div class="lock-box">
+    <div class="brand">คุ้มทุน<span style="color:var(--primary)">.</span></div>
+    <p class="lock-desc">หน้านี้จำกัดเฉพาะผู้ดูแลเว็บไซต์ — กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
+    <input type="password" id="lock-password" placeholder="รหัสผ่าน" autocomplete="off" />
+    <button type="button" id="lock-submit">เข้าสู่ระบบ</button>
+    <p class="lock-error" id="lock-error" style="display:none;">รหัสผ่านไม่ถูกต้อง ลองอีกครั้ง</p>
+    <p class="lock-note">⚠️ การป้องกันนี้เป็นแค่ตัวกันคนทั่วไปเปิดเจอโดยบังเอิญ ไม่ใช่ระบบความปลอดภัยจริงจัง เพราะเป็นเว็บสถิตไม่มีเซิร์ฟเวอร์ตรวจสอบสิทธิ์ — อย่าใช้กับข้อมูลที่ต้องปกปิดจริงจัง</p>
+  </div>
+</div>
+
+<div id="admin-content" style="display:none;">
 
 <header>
   <div class="wrap bar">
@@ -163,6 +200,50 @@
     <p>หน้านี้ไม่ได้เชื่อมต่อกับเว็บไซต์จริงแบบเรียลไทม์ — การเปลี่ยนแปลงจะมีผลก็ต่อเมื่อคุณดาวน์โหลดไฟล์และอัปโหลดไปแทนที่ใน GitHub repo เท่านั้น ข้อมูลที่กรอกในหน้านี้จะหายไปเมื่อปิดหน้าต่าง (ยังไม่ได้บันทึกอัตโนมัติ) แนะนำให้ดาวน์โหลดไฟล์เก็บไว้ทุกครั้งที่แก้ไขเสร็จ</p>
   </div>
 </footer>
+
+</div><!-- /#admin-content -->
+
+<script>
+// ---------------- Lock screen (client-side deterrent only, ไม่ใช่ระบบความปลอดภัยจริงจัง) ----------------
+// รหัสผ่านเริ่มต้นคือ "kuntun2026" — เปลี่ยนได้โดยแทนที่ค่า ADMIN_PASSWORD_HASH ด้านล่างด้วย SHA-256 hash
+// ของรหัสผ่านใหม่ (ขอให้ Claude ช่วยคำนวณ hash ให้ได้ ถ้าไม่สะดวกคำนวณเอง)
+const ADMIN_PASSWORD_HASH = '7b3d9d84e510802f68402776d5e228a562381ead44355fa2a9fbd9164105b1bd';
+const UNLOCK_KEY = 'kuntun_admin_unlocked';
+
+async function sha256Hex(text){
+  const buf = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(digest)).map(b=> b.toString(16).padStart(2,'0')).join('');
+}
+
+function unlockAdmin(){
+  document.getElementById('lock-screen').style.display = 'none';
+  document.getElementById('admin-content').style.display = 'block';
+}
+
+async function tryUnlock(){
+  const pwEl = document.getElementById('lock-password');
+  const errEl = document.getElementById('lock-error');
+  const hash = await sha256Hex(pwEl.value);
+  if(hash === ADMIN_PASSWORD_HASH){
+    sessionStorage.setItem(UNLOCK_KEY, '1');
+    errEl.style.display = 'none';
+    unlockAdmin();
+  } else {
+    errEl.style.display = 'block';
+    pwEl.value = '';
+    pwEl.focus();
+  }
+}
+
+if(sessionStorage.getItem(UNLOCK_KEY) === '1'){
+  unlockAdmin();
+}
+document.getElementById('lock-submit').addEventListener('click', tryUnlock);
+document.getElementById('lock-password').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') tryUnlock();
+});
+</script>
 
 <script>
 (function(){
