@@ -112,8 +112,31 @@
       </div>
 
       <div class="panel">
+        <h2>ค่าบำรุงรักษาและค่าใช้จ่ายอื่นๆ</h2>
+        <p class="desc" id="maint-panel-desc">ค่าใช้จ่ายที่เกิดขึ้นทุกปีตลอดอายุการใช้งาน (แยกจากเงินลงทุนก้อนแรก)</p>
+        <div class="field-row">
+          <div class="field">
+            <label id="f-maintenance-label">ค่าบำรุงรักษา <span class="hint">บาท/ปี</span></label>
+            <input type="number" id="f-maintenance" value="1500" />
+            <span class="note" id="f-maintenance-note" style="display:none;">คำนวณอัตโนมัติจากส่วนต่างค่าบำรุงรักษาในแท็บด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)</span>
+          </div>
+          <div class="field">
+            <label id="f-other-cost-label">ค่าใช้จ่ายอื่นๆ ต่อปี <span class="hint">บาท/ปี</span></label>
+            <input type="number" id="f-other-cost" value="0" />
+            <span class="note" id="f-other-cost-note">เช่น ค่าประกันภัยรถยนต์/อุปกรณ์, ภาษีประจำปี, ค่าธรรมเนียมต่างๆ ที่ไม่ใช่ค่าบำรุงรักษาโดยตรง แต่ต้องจ่ายทุกปี</span>
+          </div>
+        </div>
+        <div class="field-row single">
+          <div class="field">
+            <label>เงินเฟ้อค่าบำรุงรักษา/ค่าใช้จ่ายอื่นๆ <span class="hint">% / ปี</span></label>
+            <input type="number" id="f-maint-inflation" value="2" min="0" step="0.1" />
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
         <div class="advanced-toggle" id="advanced-toggle">
-          <span><b>สมมติฐานขั้นสูง</b> — บำรุงรักษา, อายุใช้งาน, การเสื่อมสภาพ, มูลค่าซาก, อัตราคิดลด</span>
+          <span><b>สมมติฐานขั้นสูง</b> — อายุใช้งาน, การเสื่อมสภาพ, มูลค่าซาก, อัตราคิดลด</span>
           <span class="chev" id="advanced-chev">›</span>
         </div>
         <div class="advanced-body" id="advanced-body">
@@ -124,26 +147,8 @@
               <span class="note" id="f-lifespan-note" style="display:none;">ในแท็บรถยนต์ ค่านี้คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)</span>
             </div>
             <div class="field">
-              <label>ค่าบำรุงรักษา <span class="hint">บาท/ปี</span></label>
-              <input type="number" id="f-maintenance" value="1500" />
-              <span class="note">ใส่ค่าติดลบได้ ถ้าอุปกรณ์ใหม่ประหยัดค่าบำรุงรักษาสุทธิ (เช่น รถ BEV ที่ไม่ต้องเปลี่ยนน้ำมันเครื่อง)</span>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>เงินเฟ้อค่าบำรุงรักษา <span class="hint">% / ปี</span></label>
-              <input type="number" id="f-maint-inflation" value="2" min="0" step="0.1" />
-            </div>
-            <div class="field">
               <label>ประสิทธิภาพลดลงต่อปี <span class="hint">% / ปี</span></label>
               <input type="number" id="f-degradation" value="0.5" min="0" step="0.1" />
-            </div>
-          </div>
-          <div class="field-row single">
-            <div class="field">
-              <label>ค่าใช้จ่ายอื่นๆ ต่อปี <span class="hint">บาท/ปี</span></label>
-              <input type="number" id="f-other-cost" value="0" min="0" />
-              <span class="note">เช่น ค่าประกันภัยรถยนต์/อุปกรณ์, ภาษีประจำปี, ค่าธรรมเนียมต่างๆ ที่ไม่ใช่ค่าบำรุงรักษาโดยตรง แต่ต้องจ่ายทุกปี (ใช้อัตราเงินเฟ้อเดียวกับค่าบำรุงรักษาด้านซ้าย)</span>
             </div>
           </div>
           <div class="field-row">
@@ -395,6 +400,7 @@
     document.getElementById('f-lifespan').value = d.lifespan;
     document.getElementById('f-sell-year').value = d.lifespan;
     document.getElementById('f-maintenance').value = d.maintenance;
+    document.getElementById('f-other-cost').value = 0;
     document.getElementById('f-degradation').value = d.degradation;
     document.getElementById('f-salvage').value = d.salvage;
     document.getElementById('f-cost').readOnly = isVehicle;
@@ -411,6 +417,14 @@
       : 'ถ้าขายก่อนครบอายุใช้งาน ระบบจะหยุดนับเงินประหยัดหลังปีนี้ และรับมูลค่าซากเป็นเงินก้อนในปีนี้แทน ค่าเริ่มต้น = อายุการใช้งานอุปกรณ์';
     document.getElementById('f-cost-note').style.display = isVehicle ? 'block' : 'none';
     document.getElementById('f-salvage-note').style.display = isVehicle ? 'block' : 'none';
+    document.getElementById('f-maintenance').readOnly = isCarWithHoldYears;
+    document.getElementById('f-other-cost').readOnly = isCarWithHoldYears;
+    document.getElementById('f-maintenance').classList.toggle('auto-filled', isCarWithHoldYears);
+    document.getElementById('f-other-cost').classList.toggle('auto-filled', isCarWithHoldYears);
+    document.getElementById('f-maintenance-note').style.display = isCarWithHoldYears ? 'block' : 'none';
+    document.getElementById('f-other-cost-note').textContent = isCarWithHoldYears
+      ? 'คำนวณอัตโนมัติจากส่วนต่างค่าใช้จ่ายอื่นๆ ในแท็บด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)'
+      : 'เช่น ค่าประกันภัยรถยนต์/อุปกรณ์, ภาษีประจำปี, ค่าธรรมเนียมต่างๆ ที่ไม่ใช่ค่าบำรุงรักษาโดยตรง แต่ต้องจ่ายทุกปี';
     vehicleSalvageOverrideBaht = null;
 
     // เครื่องกรองน้ำ: ประหยัด "ค่าน้ำ" ไม่ใช่พลังงานไฟฟ้า — ปรับข้อความ/ซ่อนฟิลด์ที่ไม่เกี่ยวข้อง
@@ -559,6 +573,11 @@
         '<div class="field-row single">',
           '<div class="field"><label>ราคาขาย BEV เมื่อถือครองครบตามจำนวนปีข้างต้น <span class="hint">บาท</span></label><input type="number" id="v-bev-resale" value="300000" min="0"/></div>',
         '</div>',
+        '<div class="field-row">',
+          '<div class="field"><label>ค่าบำรุงรักษา BEV <span class="hint">บาท/ปี</span></label><input type="number" id="v-bev-maint" value="2000" min="0"/></div>',
+          '<div class="field"><label>ค่าใช้จ่ายอื่นๆ BEV <span class="hint">บาท/ปี</span></label><input type="number" id="v-bev-other" value="12000" min="0"/>',
+          '<span class="note">เช่น ค่าประกันภัย, ภาษีประจำปี</span></div>',
+        '</div>',
         '<div class="field-row single">',
           '<div class="field"><label>เทียบกับ</label>',
           '<select id="v-compare-mode">',
@@ -576,6 +595,10 @@
           '<div class="field-row single">',
             '<div class="field"><label>อัตราสิ้นเปลืองรถน้ำมันที่เทียบเคียง <span class="hint">กม./ลิตร</span></label><input type="number" id="v-kmpl" value="12" min="0.1" step="0.1"/></div>',
           '</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ค่าบำรุงรักษารถน้ำมันที่เทียบเคียง <span class="hint">บาท/ปี</span></label><input type="number" id="v-ref-maint" value="6000" min="0"/></div>',
+            '<div class="field"><label>ค่าใช้จ่ายอื่นๆ รถน้ำมันที่เทียบเคียง <span class="hint">บาท/ปี</span></label><input type="number" id="v-ref-other" value="10000" min="0"/></div>',
+          '</div>',
         '</div>',
         '<div id="v-nocar-fields" style="display:none;">',
           '<div class="field-row single">',
@@ -588,6 +611,11 @@
           '<div class="field-row single">',
             '<div class="field"><label>อัตราสิ้นเปลืองรถเดิมที่ใช้อยู่ <span class="hint">กม./ลิตร</span></label><input type="number" id="v-keepold-kmpl" value="10" min="0.1" step="0.1"/>',
             '<span class="note">ยิ่งรถเก่ากินน้ำมันมากขึ้น ให้ปรับตัวเลขนี้ลงตามจริง</span></div>',
+          '</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ค่าบำรุงรักษารถเดิม <span class="hint">บาท/ปี</span></label><input type="number" id="v-keepold-maint" value="8000" min="0"/>',
+            '<span class="note">รถเก่ามักบำรุงรักษาแพงกว่ารถใหม่</span></div>',
+            '<div class="field"><label>ค่าใช้จ่ายอื่นๆ รถเดิม <span class="hint">บาท/ปี</span></label><input type="number" id="v-keepold-other" value="10000" min="0"/></div>',
           '</div>',
           '<div class="field-row single">',
             '<div class="field"><label>ค่าอะไหล่ชิ้นใหญ่ที่รถเดิมน่าจะต้องเปลี่ยน (ระบุปีได้)</label>',
@@ -629,7 +657,8 @@
         calculate();
       });
       updateEmptyNote('v-repair-rows','v-repair-empty-note');
-      ['v-bev-price','v-bev-resale','v-ref-price','v-ref-resale','v-kmpl','v-nocar-cost','v-keepold-kmpl',
+      ['v-bev-price','v-bev-resale','v-bev-maint','v-bev-other','v-ref-price','v-ref-resale','v-ref-maint','v-ref-other',
+       'v-kmpl','v-nocar-cost','v-keepold-kmpl','v-keepold-maint','v-keepold-other',
        'v-distance','v-fuel-price','v-kwh100','v-home-share','v-public-rate'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateBevPreview(); calculate(); });
       });
@@ -651,6 +680,11 @@
         '<div class="field-row single">',
           '<div class="field"><label>ราคาขายไฮบริดเมื่อถือครองครบตามจำนวนปีข้างต้น <span class="hint">บาท</span></label><input type="number" id="h-resale" value="280000" min="0"/></div>',
         '</div>',
+        '<div class="field-row">',
+          '<div class="field"><label>ค่าบำรุงรักษาไฮบริด <span class="hint">บาท/ปี</span></label><input type="number" id="h-maint" value="4000" min="0"/></div>',
+          '<div class="field"><label>ค่าใช้จ่ายอื่นๆ ไฮบริด <span class="hint">บาท/ปี</span></label><input type="number" id="h-other" value="11000" min="0"/>',
+          '<span class="note">เช่น ค่าประกันภัย, ภาษีประจำปี</span></div>',
+        '</div>',
         '<div class="field-row single">',
           '<div class="field"><label>เทียบกับ</label>',
           '<select id="h-compare-mode">',
@@ -668,6 +702,10 @@
           '<div class="field-row single">',
             '<div class="field"><label>อัตราสิ้นเปลืองรถรุ่นเครื่องยนต์ปกติ <span class="hint">กม./ลิตร</span></label><input type="number" id="h-kmpl-old" value="12" min="0.1" step="0.1"/></div>',
           '</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ค่าบำรุงรักษารุ่นเครื่องยนต์ปกติ <span class="hint">บาท/ปี</span></label><input type="number" id="h-ref-maint" value="5000" min="0"/></div>',
+            '<div class="field"><label>ค่าใช้จ่ายอื่นๆ รุ่นเครื่องยนต์ปกติ <span class="hint">บาท/ปี</span></label><input type="number" id="h-ref-other" value="10000" min="0"/></div>',
+          '</div>',
         '</div>',
         '<div id="h-nocar-fields" style="display:none;">',
           '<div class="field-row single">',
@@ -680,6 +718,11 @@
           '<div class="field-row single">',
             '<div class="field"><label>อัตราสิ้นเปลืองรถเดิมที่ใช้อยู่ <span class="hint">กม./ลิตร</span></label><input type="number" id="h-keepold-kmpl" value="10" min="0.1" step="0.1"/>',
             '<span class="note">ยิ่งรถเก่ากินน้ำมันมากขึ้น ให้ปรับตัวเลขนี้ลงตามจริง</span></div>',
+          '</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ค่าบำรุงรักษารถเดิม <span class="hint">บาท/ปี</span></label><input type="number" id="h-keepold-maint" value="8000" min="0"/>',
+            '<span class="note">รถเก่ามักบำรุงรักษาแพงกว่ารถใหม่</span></div>',
+            '<div class="field"><label>ค่าใช้จ่ายอื่นๆ รถเดิม <span class="hint">บาท/ปี</span></label><input type="number" id="h-keepold-other" value="10000" min="0"/></div>',
           '</div>',
           '<div class="field-row single">',
             '<div class="field"><label>ค่าอะไหล่ชิ้นใหญ่ที่รถเดิมน่าจะต้องเปลี่ยน (ระบุปีได้)</label>',
@@ -740,7 +783,8 @@
         calculate();
       });
       updateEmptyNote('h-repair-rows','h-repair-empty-note');
-      ['h-price','h-resale','h-ref-price','h-ref-resale','h-kmpl-old','h-nocar-cost','h-keepold-kmpl',
+      ['h-price','h-resale','h-maint','h-other','h-ref-price','h-ref-resale','h-ref-maint','h-ref-other',
+       'h-kmpl-old','h-nocar-cost','h-keepold-kmpl','h-keepold-maint','h-keepold-other',
        'h-distance','h-fuel-price','h-kmpl-new','h-ev-share','h-ev-kwh100','h-home-share','h-public-rate'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateHybridPreview(); calculate(); });
       });
@@ -1234,6 +1278,15 @@
     }
   }
 
+  // เขียนส่วนต่างค่าบำรุงรักษา/ค่าใช้จ่ายอื่นๆ (ของใหม่ ลบ ของเทียบเคียง) ลงในช่องกลาง f-maintenance / f-other-cost
+  function applyVehicleMaintenance(maintDiff, otherDiff){
+    const maintEl = document.getElementById('f-maintenance');
+    const otherEl = document.getElementById('f-other-cost');
+    if(!maintEl || !otherEl) return;
+    maintEl.value = Math.round(maintDiff);
+    otherEl.value = Math.round(otherDiff);
+  }
+
   // ซิงก์ "จำนวนปีที่จะใช้รถ" เข้ากับ "อายุการใช้งานอุปกรณ์" และ "ปีที่จะขาย" ที่ใช้ร่วมกันทั้งระบบ
   // เพราะราคาขายที่กรอกในแท็บรถยนต์ตอนนี้หมายถึงมูลค่า ณ ปีที่ระบุนี้โดยตรง ไม่ต้องคำนวณค่าเสื่อมราคาอีกชั้น
   function syncHoldYears(fieldId){
@@ -1275,10 +1328,23 @@
     const monthlySavings = baselineCostAvoided - elecCost;
     const monthlyCo2Kg = (compareMode==='ice' || compareMode==='keepold' ? litersAvoided*PETROL_CO2_PER_LITER : 0) - kwhUsed*co2Factor;
 
+    const bevMaint = parseFloat(document.getElementById('v-bev-maint').value)||0;
+    const bevOther = parseFloat(document.getElementById('v-bev-other').value)||0;
+    let refMaint=0, refOther=0;
+    if(compareMode==='ice'){
+      refMaint = parseFloat(document.getElementById('v-ref-maint').value)||0;
+      refOther = parseFloat(document.getElementById('v-ref-other').value)||0;
+    } else if(compareMode==='keepold'){
+      refMaint = parseFloat(document.getElementById('v-keepold-maint').value)||0;
+      refOther = parseFloat(document.getElementById('v-keepold-other').value)||0;
+    } // nocar: ไม่มีรถเทียบเคียง refMaint/refOther = 0
+
     const investmentPremium = bevPrice - refPrice;
     const salvageBaht = bevResale - refResale; // ทั้งสองค่าคือราคาขาย ณ ปีที่ใช้จริง (จำนวนปีที่จะใช้รถ) ไม่ต้องคำนวณค่าเสื่อมราคาซ้อน
+    const maintDiff = bevMaint - refMaint;
+    const otherDiff = bevOther - refOther;
 
-    return { baselineCostAvoided, elecCost, monthlySavings, monthlyCo2Kg, kwhUsed, investmentPremium, salvageBaht, compareMode, repairEvents };
+    return { baselineCostAvoided, elecCost, monthlySavings, monthlyCo2Kg, kwhUsed, investmentPremium, salvageBaht, compareMode, repairEvents, maintDiff, otherDiff };
   }
 
   function investmentWarningRow(investmentPremium, compareMode){
@@ -1296,13 +1362,15 @@
   function updateBevPreview(){
     const r = computeBevDetail();
     applyVehicleInvestment(r.investmentPremium, r.salvageBaht);
+    applyVehicleMaintenance(r.maintDiff, r.otherDiff);
     const baselineLabel = r.compareMode==='ice' ? 'ค่าน้ำมันที่ประหยัดได้'
       : (r.compareMode==='keepold' ? 'ค่าน้ำมันรถเดิมที่ประหยัดได้' : 'ค่าเดินทางทางเลือกที่ไม่ต้องจ่าย');
     const rows = [
       baselineLabel+' ~'+Math.round(r.baselineCostAvoided).toLocaleString('th-TH')+' บาท/เดือน',
       'ค่าไฟชาร์จที่ต้องจ่าย ~'+Math.round(r.elecCost).toLocaleString('th-TH')+' บาท/เดือน ('+r.kwhUsed.toFixed(0)+' หน่วย)',
       '<b>ประหยัดสุทธิ: '+Math.round(r.monthlySavings).toLocaleString('th-TH')+' บาท/เดือน</b>',
-      'เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ (ราคาขาย ณ ปีที่ระบุ): '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท'
+      'เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ (ราคาขาย ณ ปีที่ระบุ): '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท',
+      'ส่วนต่างค่าบำรุงรักษา/ปี: '+fmt0(r.maintDiff)+' บาท · ส่วนต่างค่าใช้จ่ายอื่นๆ/ปี: '+fmt0(r.otherDiff)+' บาท'
     ];
     if(r.compareMode==='keepold' && r.repairEvents.length>0){
       const total = r.repairEvents.reduce((s,e)=>s+e.amount,0);
@@ -1362,15 +1430,29 @@
       monthlyCo2Kg = -(litersNew*PETROL_CO2_PER_LITER + kwhUsed*co2Factor);
     }
 
+    const hMaint = parseFloat(document.getElementById('h-maint').value)||0;
+    const hOther = parseFloat(document.getElementById('h-other').value)||0;
+    let hRefMaint=0, hRefOther=0;
+    if(compareMode==='ice'){
+      hRefMaint = parseFloat(document.getElementById('h-ref-maint').value)||0;
+      hRefOther = parseFloat(document.getElementById('h-ref-other').value)||0;
+    } else if(compareMode==='keepold'){
+      hRefMaint = parseFloat(document.getElementById('h-keepold-maint').value)||0;
+      hRefOther = parseFloat(document.getElementById('h-keepold-other').value)||0;
+    } // nocar: ไม่มีรถเทียบเคียง
+
     const investmentPremium = hybridPrice - refPrice;
     const salvageBaht = hybridResale - refResale; // ทั้งสองค่าคือราคาขาย ณ ปีที่ใช้จริง (จำนวนปีที่จะใช้รถ) ไม่ต้องคำนวณค่าเสื่อมราคาซ้อน
+    const maintDiff = hMaint - hRefMaint;
+    const otherDiff = hOther - hRefOther;
 
-    return { litersSaved, hybridFuelCost, elecCost, effectiveKmpl, phevMode, monthlySavings, monthlyCo2Kg, investmentPremium, salvageBaht, compareMode, repairEvents };
+    return { litersSaved, hybridFuelCost, elecCost, effectiveKmpl, phevMode, monthlySavings, monthlyCo2Kg, investmentPremium, salvageBaht, compareMode, repairEvents, maintDiff, otherDiff };
   }
 
   function updateHybridPreview(){
     const r = computeHybridDetail();
     applyVehicleInvestment(r.investmentPremium, r.salvageBaht);
+    applyVehicleMaintenance(r.maintDiff, r.otherDiff);
     const rows = (r.compareMode==='ice' || r.compareMode==='keepold')
       ? ['ลดการใช้น้ำมัน ~'+r.litersSaved.toFixed(1)+' ลิตร/เดือน']
       : ['ค่าน้ำมันที่ต้องจ่ายเอง ~'+Math.round(r.hybridFuelCost).toLocaleString('th-TH')+' บาท/เดือน'];
@@ -1380,6 +1462,7 @@
     }
     rows.push('<b>ประหยัดสุทธิ: '+Math.round(r.monthlySavings).toLocaleString('th-TH')+' บาท/เดือน</b>');
     rows.push('เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ (ราคาขาย ณ ปีที่ระบุ): '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท');
+    rows.push('ส่วนต่างค่าบำรุงรักษา/ปี: '+fmt0(r.maintDiff)+' บาท · ส่วนต่างค่าใช้จ่ายอื่นๆ/ปี: '+fmt0(r.otherDiff)+' บาท');
     if(r.compareMode==='keepold' && r.repairEvents.length>0){
       const total = r.repairEvents.reduce((s,e)=>s+e.amount,0);
       rows.push('ค่าอะไหล่รถเดิมที่ประหยัดได้เพิ่ม: '+fmt0(total)+' บาท รวม '+r.repairEvents.length+' รายการ (นับในปีที่ระบุแต่ละรายการ)');
