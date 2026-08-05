@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>คุ้มทุน — จัดการโฆษณาและลิงก์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#EEF2EC; --paper-raised:#FBFCFA; --ink:#182620; --ink-soft:#4E5D54; --ink-faint:#8A968D;
+    --line:#C9D2C9; --primary:#1F6F54; --primary-dark:#134637; --primary-soft:#DCEBE1;
+    --amber:#C9871F; --amber-soft:#F5E7CC; --rust:#AE4A31; --rust-soft:#F2DDD5; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden;}
+  body{background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px;}
+  header{border-bottom:1px solid var(--line);background:var(--paper-raised);}
+  header .bar{display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .brand{font-family:'Fraunces',serif;font-weight:700;font-size:20px;}
+  .brand .tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-faint);border-left:1px solid var(--line);padding-left:8px;margin-left:8px;}
+  a.back-link{font-size:12.5px;color:var(--primary-dark);font-weight:600;text-decoration:none;}
+  a.back-link:hover{text-decoration:underline;}
+
+  h1{font-family:'Fraunces',serif;font-size:clamp(26px,4vw,34px);font-weight:600;margin:36px 0 8px;}
+  .lead{color:var(--ink-soft);font-size:15px;line-height:1.6;max-width:680px;margin:0 0 22px;}
+
+  .steps{
+    background:var(--primary-soft);border-radius:12px;padding:18px 20px;margin-bottom:32px;
+  }
+  .steps h2{font-family:'Fraunces',serif;font-size:16px;margin:0 0 10px;color:var(--primary-dark);}
+  .steps ol{margin:0;padding-left:20px;font-size:13.5px;line-height:1.8;color:var(--ink);}
+
+  .panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px;min-width:0;}
+  .panel h2{font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin:0 0 4px;}
+  .panel .desc{font-size:13px;color:var(--ink-faint);margin:0 0 18px;}
+
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;min-width:0;}
+  .field-row.single{grid-template-columns:1fr;}
+  .field{display:flex;flex-direction:column;gap:6px;min-width:0;}
+  .field label{font-size:12.5px;font-weight:700;color:var(--ink-soft);}
+  .field input, .field select, .field textarea{
+    font-family:'JetBrains Mono',monospace;font-size:13.5px;border:1px solid var(--line);border-radius:8px;
+    background:var(--paper);padding:9px 10px;color:var(--ink);width:100%;
+  }
+  .field textarea{min-height:90px;resize:vertical;}
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);
+  }
+  .field .note{font-size:11px;color:var(--ink-faint);line-height:1.4;}
+
+  .preview-box{
+    margin-top:14px;border:1px dashed var(--line);border-radius:8px;padding:14px;
+    background:var(--paper);min-height:60px;display:flex;align-items:center;justify-content:center;
+  }
+  .preview-box img{max-width:100%;height:auto;}
+  .preview-box .empty{color:var(--ink-faint);font-size:12px;font-family:'JetBrains Mono',monospace;}
+
+  .links-list{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+  .link-row{display:flex;gap:10px;align-items:center;}
+  .link-row input{flex:1;}
+  .link-row .rm-btn{
+    flex-shrink:0;border:1px solid var(--line);background:var(--paper-raised);border-radius:8px;
+    width:34px;height:34px;color:var(--rust);cursor:pointer;font-size:14px;
+  }
+  .link-row .rm-btn:hover{background:var(--rust-soft);}
+  .btn-add{
+    border:1px dashed var(--primary);background:var(--primary-soft);color:var(--primary-dark);
+    border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;
+  }
+  .btn-add:hover{background:var(--primary);color:#fff;}
+
+  .output-panel{background:var(--ink);color:#e8f0ea;border-radius:var(--radius);padding:24px;}
+  .output-panel h2{font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin:0 0 4px;color:#fff;}
+  .output-panel .desc{font-size:13px;color:#aebcb3;margin:0 0 16px;}
+  .output-panel textarea{
+    width:100%;min-height:200px;background:#0f1a14;color:#a9e8c9;border:1px solid #2c4438;border-radius:8px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;padding:14px;line-height:1.6;
+  }
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .btn-primary{
+    background:var(--primary);color:#fff;border:none;border-radius:9px;padding:11px 20px;
+    font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .btn-primary:hover{background:#2a8a68;}
+  .btn-secondary{
+    background:transparent;color:#e8f0ea;border:1px solid #3d5a4a;border-radius:9px;padding:11px 20px;
+    font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .btn-secondary:hover{background:#243b30;}
+
+  .upload-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;}
+  .upload-row label{
+    background:var(--paper-raised);border:1px solid var(--line);border-radius:9px;padding:9px 16px;
+    font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);
+  }
+  .upload-row label:hover{border-color:var(--primary);}
+  .upload-row input[type=file]{display:none;}
+  .upload-row .status{font-size:12px;color:var(--ink-faint);}
+
+  footer{border-top:1px solid var(--line);padding:26px 0 40px;margin-top:20px;}
+  footer p{font-size:12px;color:var(--ink-faint);line-height:1.7;max-width:640px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">คุ้มทุน<span style="color:var(--primary)">.</span><span class="tag">ADMIN — ADS &amp; LINKS</span></div>
+    <a class="back-link" href="index.html">← กลับไปหน้าเว็บไซต์</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>จัดการโฆษณาและลิงก์</h1>
+  <p class="lead">เว็บไซต์นี้เป็นเว็บสถิต (static) ไม่มีฐานข้อมูลหรือเซิร์ฟเวอร์เบื้องหลัง หน้านี้จึงเป็น "เครื่องมือช่วยสร้างไฟล์ตั้งค่า" — กรอกข้อมูลด้านล่าง แล้วดาวน์โหลดไฟล์ <code>ads-config.json</code> ไปแทนที่ไฟล์เดิมใน GitHub repo เว็บไซต์จริงจะโหลดค่าที่ตั้งไว้ให้ผู้เข้าชมทุกคนเห็นเหมือนกัน</p>
+
+  <div class="steps">
+    <h2>วิธีใช้งาน</h2>
+    <ol>
+      <li>ถ้าเคยตั้งค่าไว้แล้ว กด "อัปโหลดไฟล์ ads-config.json เดิม" ด้านล่างเพื่อโหลดค่ามาแก้ต่อ (ข้ามได้ถ้าตั้งค่าครั้งแรก)</li>
+      <li>กรอก/แก้ไขข้อมูลโฆษณาแต่ละตำแหน่ง และลิงก์ที่ต้องการแสดงในหน้าเว็บ</li>
+      <li>กด "ดาวน์โหลดไฟล์ ads-config.json" ที่ด้านล่างสุดของหน้านี้</li>
+      <li>ไปที่ GitHub repo ของเว็บไซต์ → เปิดไฟล์ <code>ads-config.json</code> → กดไอคอนดินสอ (Edit) → ลบเนื้อหาเดิมแล้ววางเนื้อหาใหม่ (หรือใช้ "Upload files" แทนที่ไฟล์เดิมได้เลย) → Commit changes</li>
+      <li>รอ 1-2 นาที เว็บไซต์จะอัปเดตให้ผู้เข้าชมทุกคนเห็นค่าล่าสุดโดยอัตโนมัติ</li>
+    </ol>
+  </div>
+
+  <div class="upload-row">
+    <label for="upload-input">📂 อัปโหลดไฟล์ ads-config.json เดิม (ถ้ามี)</label>
+    <input type="file" id="upload-input" accept="application/json" />
+    <span class="status" id="upload-status"></span>
+  </div>
+
+  <!-- AD SLOTS -->
+  <div id="slots-container"></div>
+
+  <!-- LINKS -->
+  <div class="panel">
+    <h2>ลิงก์ท้ายเว็บไซต์</h2>
+    <p class="desc">เช่น ลิงก์สปอนเซอร์ เว็บพันธมิตร หรือแหล่งข้อมูลที่เกี่ยวข้อง จะแสดงเป็นแถวลิงก์เหนือข้อความ disclaimer ท้ายหน้าเว็บ</p>
+    <div class="links-list" id="links-list"></div>
+    <button type="button" class="btn-add" id="add-link-btn">+ เพิ่มลิงก์</button>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output-panel">
+    <h2>ไฟล์ตั้งค่าที่พร้อมใช้งาน</h2>
+    <p class="desc">กดปุ่มด้านล่างเพื่อสร้างไฟล์ล่าสุดจากข้อมูลที่กรอกไว้ด้านบน</p>
+    <textarea id="json-output" readonly placeholder="กด &quot;สร้างไฟล์&quot; เพื่อดูตัวอย่าง JSON ที่นี่"></textarea>
+    <div class="btn-row">
+      <button type="button" class="btn-primary" id="generate-btn">🔄 สร้างไฟล์ล่าสุด</button>
+      <button type="button" class="btn-secondary" id="download-btn">⬇ ดาวน์โหลดไฟล์ ads-config.json</button>
+      <button type="button" class="btn-secondary" id="copy-btn">📋 คัดลอกข้อความ</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>หน้านี้ไม่ได้เชื่อมต่อกับเว็บไซต์จริงแบบเรียลไทม์ — การเปลี่ยนแปลงจะมีผลก็ต่อเมื่อคุณดาวน์โหลดไฟล์และอัปโหลดไปแทนที่ใน GitHub repo เท่านั้น ข้อมูลที่กรอกในหน้านี้จะหายไปเมื่อปิดหน้าต่าง (ยังไม่ได้บันทึกอัตโนมัติ) แนะนำให้ดาวน์โหลดไฟล์เก็บไว้ทุกครั้งที่แก้ไขเสร็จ</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+
+  const SLOT_DEFS = [
+    { id:'top', title:'แบนเนอร์บนสุด', desc:'อยู่หลังแท็บเลือกอุปกรณ์ ก่อนเริ่มฟอร์มกรอกข้อมูล (แนะนำ 728×90 หรือ responsive)' },
+    { id:'mid', title:'แบนเนอร์กลางเนื้อหา', desc:'อยู่หลังผลลัพธ์ทั้งหมด ก่อนอภิธานศัพท์' },
+    { id:'footer', title:'แบนเนอร์ท้ายเว็บไซต์', desc:'อยู่ก่อน footer และข้อความ disclaimer' }
+  ];
+
+  let state = {
+    slots: { top:{type:'none'}, mid:{type:'none'}, footer:{type:'none'} },
+    links: []
+  };
+
+  function fieldsForType(slotId, cfg){
+    const type = cfg.type || 'none';
+    if(type==='adsense'){
+      return [
+        ['Publisher ID (data-ad-client)', slotId+'-client', cfg.client||'', 'เช่น ca-pub-1234567890123456'],
+        ['Ad slot ID (data-ad-slot)', slotId+'-slot', cfg.slot||'', 'เช่น 1234567890'],
+      ];
+    }
+    if(type==='custom'){
+      return [
+        ['ลิงก์รูปภาพแบนเนอร์ (URL)', slotId+'-imageUrl', cfg.imageUrl||'', 'https://...'],
+        ['ลิงก์ปลายทางเมื่อคลิก (URL)', slotId+'-linkUrl', cfg.linkUrl||'', 'https://...'],
+        ['ข้อความ Alt', slotId+'-alt', cfg.alt||'', 'คำอธิบายภาพสั้นๆ'],
+      ];
+    }
+    if(type==='html'){
+      return [['โค้ด HTML ที่ต้องการแสดง', slotId+'-html', cfg.html||'', '<div>...</div>', true]];
+    }
+    return [];
+  }
+
+  function renderSlots(){
+    const container = document.getElementById('slots-container');
+    container.innerHTML = SLOT_DEFS.map(def=>{
+      const cfg = state.slots[def.id] || {type:'none'};
+      const fields = fieldsForType(def.id, cfg);
+      return [
+        '<div class="panel">',
+          '<h2>'+def.title+'</h2>',
+          '<p class="desc">'+def.desc+'</p>',
+          '<div class="field-row single"><div class="field">',
+            '<label>ประเภทเนื้อหา</label>',
+            '<select data-slot="'+def.id+'" class="slot-type">',
+              '<option value="none"'+(cfg.type==='none'?' selected':'')+'>ไม่แสดงโฆษณา</option>',
+              '<option value="adsense"'+(cfg.type==='adsense'?' selected':'')+'>Google AdSense</option>',
+              '<option value="custom"'+(cfg.type==='custom'?' selected':'')+'>แบนเนอร์รูปภาพ + ลิงก์</option>',
+              '<option value="html"'+(cfg.type==='html'?' selected':'')+'>โค้ด HTML กำหนดเอง</option>',
+            '</select>',
+          '</div></div>',
+          '<div class="slot-fields" data-slot-fields="'+def.id+'">',
+            fields.map(f=>{
+              const isTextarea = f[4];
+              const tag = isTextarea ? 'textarea' : 'input';
+              const valueAttr = isTextarea ? '' : ' value="'+(f[2]||'').replace(/"/g,'&quot;')+'"';
+              const inner = isTextarea ? (f[2]||'') : '';
+              return '<div class="field-row single"><div class="field"><label>'+f[0]+'</label>'+
+                     '<'+tag+' data-field="'+f[1]+'" placeholder="'+f[3]+'"'+valueAttr+'>'+inner+'</'+tag+'></div></div>';
+            }).join(''),
+          '</div>',
+          '<div class="preview-box" data-preview="'+def.id+'"><span class="empty">— ไม่มีตัวอย่างสำหรับประเภทนี้ —</span></div>',
+        '</div>'
+      ].join('');
+    }).join('');
+
+    container.querySelectorAll('.slot-type').forEach(sel=>{
+      sel.addEventListener('change', e=>{
+        const slotId = e.target.dataset.slot;
+        state.slots[slotId] = { type: e.target.value };
+        renderSlots();
+      });
+    });
+    container.querySelectorAll('[data-field]').forEach(inp=>{
+      inp.addEventListener('input', e=>{
+        const [slotId, key] = e.target.dataset.field.split('-');
+        if(!state.slots[slotId]) state.slots[slotId] = {};
+        state.slots[slotId][key] = e.target.value;
+        updatePreview(slotId);
+      });
+    });
+    SLOT_DEFS.forEach(def=> updatePreview(def.id));
+  }
+
+  function updatePreview(slotId){
+    const box = document.querySelector('[data-preview="'+slotId+'"]');
+    if(!box) return;
+    const cfg = state.slots[slotId] || {type:'none'};
+    if(cfg.type==='custom' && cfg.imageUrl){
+      box.innerHTML = '<img src="'+cfg.imageUrl+'" alt="'+(cfg.alt||'')+'"/>';
+    } else if(cfg.type==='html' && cfg.html){
+      box.innerHTML = cfg.html;
+    } else if(cfg.type==='adsense'){
+      box.innerHTML = '<span class="empty">AdSense จะแสดงจริงเมื่ออยู่บนเว็บไซต์ที่เผยแพร่แล้วเท่านั้น (client: '+(cfg.client||'—')+', slot: '+(cfg.slot||'—')+')</span>';
+    } else {
+      box.innerHTML = '<span class="empty">— ไม่แสดงโฆษณาในตำแหน่งนี้ —</span>';
+    }
+  }
+
+  function renderLinks(){
+    const list = document.getElementById('links-list');
+    list.innerHTML = state.links.map((l,i)=>{
+      return '<div class="link-row">'+
+        '<input placeholder="ชื่อลิงก์ เช่น พันธมิตรของเรา" data-link-label="'+i+'" value="'+(l.label||'').replace(/"/g,'&quot;')+'"/>'+
+        '<input placeholder="https://..." data-link-url="'+i+'" value="'+(l.url||'').replace(/"/g,'&quot;')+'"/>'+
+        '<button type="button" class="rm-btn" data-rm="'+i+'" title="ลบลิงก์นี้">✕</button>'+
+      '</div>';
+    }).join('');
+    list.querySelectorAll('[data-link-label]').forEach(inp=>{
+      inp.addEventListener('input', e=>{ state.links[+e.target.dataset.linkLabel].label = e.target.value; });
+    });
+    list.querySelectorAll('[data-link-url]').forEach(inp=>{
+      inp.addEventListener('input', e=>{ state.links[+e.target.dataset.linkUrl].url = e.target.value; });
+    });
+    list.querySelectorAll('[data-rm]').forEach(btn=>{
+      btn.addEventListener('click', e=>{ state.links.splice(+e.target.dataset.rm,1); renderLinks(); });
+    });
+  }
+
+  document.getElementById('add-link-btn').addEventListener('click', ()=>{
+    state.links.push({label:'', url:''});
+    renderLinks();
+  });
+
+  function buildConfig(){
+    const slots = {};
+    SLOT_DEFS.forEach(def=>{
+      const cfg = state.slots[def.id] || {type:'none'};
+      slots[def.id] = cfg;
+    });
+    return { slots, links: state.links.filter(l=> l.label && l.url) };
+  }
+
+  document.getElementById('generate-btn').addEventListener('click', ()=>{
+    document.getElementById('json-output').value = JSON.stringify(buildConfig(), null, 2);
+  });
+
+  document.getElementById('download-btn').addEventListener('click', ()=>{
+    const json = JSON.stringify(buildConfig(), null, 2);
+    document.getElementById('json-output').value = json;
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'ads-config.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', async ()=>{
+    const json = JSON.stringify(buildConfig(), null, 2);
+    document.getElementById('json-output').value = json;
+    try{
+      await navigator.clipboard.writeText(json);
+      const btn = document.getElementById('copy-btn');
+      const old = btn.textContent; btn.textContent = '✓ คัดลอกแล้ว';
+      setTimeout(()=> btn.textContent = old, 1500);
+    }catch(e){ console.warn('copy failed', e); }
+  });
+
+  document.getElementById('upload-input').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        const parsed = JSON.parse(ev.target.result);
+        state.slots = Object.assign({top:{type:'none'},mid:{type:'none'},footer:{type:'none'}}, parsed.slots||{});
+        state.links = Array.isArray(parsed.links) ? parsed.links : [];
+        renderSlots(); renderLinks();
+        document.getElementById('upload-status').textContent = '✓ โหลด '+file.name+' สำเร็จ';
+      }catch(err){
+        document.getElementById('upload-status').textContent = '✕ ไฟล์ไม่ถูกต้อง: '+err.message;
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  renderSlots();
+  renderLinks();
+})();
+</script>
+</body>
+</html>

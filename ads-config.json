@@ -1,0 +1,8 @@
+{
+  "slots": {
+    "top": { "type": "none" },
+    "mid": { "type": "none" },
+    "footer": { "type": "none" }
+  },
+  "links": []
+}
