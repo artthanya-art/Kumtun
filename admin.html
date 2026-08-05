@@ -72,6 +72,17 @@
   }
   .btn-add:hover{background:var(--primary);color:#fff;}
 
+  .img-upload-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .upload-btn{
+    background:var(--primary);color:#fff;border-radius:8px;padding:9px 16px;
+    font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .upload-btn:hover{background:var(--primary-dark);}
+  .img-filename{font-size:12px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+  details.url-alt{margin-top:10px;}
+  details.url-alt summary{font-size:12px;color:var(--primary-dark);cursor:pointer;font-weight:600;}
+  details.url-alt input{margin-top:8px;}
+
   .output-panel{background:var(--ink);color:#e8f0ea;border-radius:var(--radius);padding:24px;}
   .output-panel h2{font-family:'Fraunces',serif;font-size:18px;font-weight:700;margin:0 0 4px;color:#fff;}
   .output-panel .desc{font-size:13px;color:#aebcb3;margin:0 0 16px;}
@@ -269,7 +280,6 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
     }
     if(type==='custom'){
       return [
-        ['ลิงก์รูปภาพแบนเนอร์ (URL)', slotId+'-imageUrl', cfg.imageUrl||'', 'https://...'],
         ['ลิงก์ปลายทางเมื่อคลิก (URL)', slotId+'-linkUrl', cfg.linkUrl||'', 'https://...'],
         ['ข้อความ Alt', slotId+'-alt', cfg.alt||'', 'คำอธิบายภาพสั้นๆ'],
       ];
@@ -278,6 +288,27 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
       return [['โค้ด HTML ที่ต้องการแสดง', slotId+'-html', cfg.html||'', '<div>...</div>', true]];
     }
     return [];
+  }
+
+  function imageUploadBlockHtml(slotId, cfg){
+    const isDataUri = (cfg.imageUrl||'').indexOf('data:') === 0;
+    const statusText = isDataUri ? '✓ อัปโหลดรูปแล้ว (ฝังอยู่ในไฟล์)' : (cfg.imageUrl ? '✓ ใช้ลิงก์ภายนอก' : 'ยังไม่ได้เลือกรูป');
+    const urlFieldValue = (!isDataUri && cfg.imageUrl) ? cfg.imageUrl : '';
+    return [
+      '<div class="field-row single"><div class="field">',
+        '<label>รูปภาพแบนเนอร์</label>',
+        '<div class="img-upload-row">',
+          '<label class="upload-btn" for="imgfile-'+slotId+'">📂 เลือกรูปจากเครื่อง</label>',
+          '<input type="file" id="imgfile-'+slotId+'" accept="image/*" data-imgfile="'+slotId+'" style="display:none;"/>',
+          '<span class="img-filename" data-imgfilename="'+slotId+'">'+statusText+'</span>',
+        '</div>',
+        '<span class="note">รูปจะถูกฝังลงในไฟล์ ads-config.json โดยตรง ไม่ต้องอัปโหลดไปเก็บที่อื่น — แนะนำไฟล์ไม่เกิน ~300KB (ควรบีบอัด/ย่อรูปก่อน) ไม่งั้นไฟล์ config จะใหญ่และโหลดเว็บช้าลง</span>',
+        '<details class="url-alt">',
+          '<summary>หรือใช้ลิงก์รูปภาพจากที่อื่นแทน (ถ้ามีที่ฝากรูปอยู่แล้ว)</summary>',
+          '<input type="text" data-field="'+slotId+'-imageUrl" placeholder="https://..." value="'+urlFieldValue.replace(/"/g,'&quot;')+'"/>',
+        '</details>',
+      '</div></div>'
+    ].join('');
   }
 
   function renderSlots(){
@@ -299,6 +330,7 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
             '</select>',
           '</div></div>',
           '<div class="slot-fields" data-slot-fields="'+def.id+'">',
+            (cfg.type==='custom' ? imageUploadBlockHtml(def.id, cfg) : ''),
             fields.map(f=>{
               const isTextarea = f[4];
               const tag = isTextarea ? 'textarea' : 'input';
@@ -326,6 +358,29 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
         if(!state.slots[slotId]) state.slots[slotId] = {};
         state.slots[slotId][key] = e.target.value;
         updatePreview(slotId);
+      });
+    });
+    container.querySelectorAll('[data-imgfile]').forEach(inp=>{
+      inp.addEventListener('change', function(e){
+        const slotId = e.target.dataset.imgfile;
+        const file = e.target.files[0];
+        if(!file) return;
+        if(!file.type.startsWith('image/')){
+          alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+          return;
+        }
+        if(file.size > 500*1024){
+          alert('ไฟล์รูปใหญ่ ('+Math.round(file.size/1024)+' KB) แนะนำบีบอัด/ย่อรูปก่อนอัปโหลด เพื่อไม่ให้ไฟล์ config ใหญ่เกินไป (ยังใช้งานได้ แต่เว็บจะโหลดช้าลง)');
+        }
+        const reader = new FileReader();
+        reader.onload = function(ev){
+          if(!state.slots[slotId]) state.slots[slotId] = {type:'custom'};
+          state.slots[slotId].imageUrl = ev.target.result; // data URI ฝังรูปไว้ในไฟล์ config โดยตรง
+          const fnEl = container.querySelector('[data-imgfilename="'+slotId+'"]');
+          if(fnEl) fnEl.textContent = '✓ '+file.name+' ('+Math.round(file.size/1024)+' KB)';
+          updatePreview(slotId);
+        };
+        reader.readAsDataURL(file);
       });
     });
     SLOT_DEFS.forEach(def=> updatePreview(def.id));
