@@ -139,6 +139,13 @@
               <input type="number" id="f-degradation" value="0.5" min="0" step="0.1" />
             </div>
           </div>
+          <div class="field-row single">
+            <div class="field">
+              <label>ค่าใช้จ่ายอื่นๆ ต่อปี <span class="hint">บาท/ปี</span></label>
+              <input type="number" id="f-other-cost" value="0" min="0" />
+              <span class="note">เช่น ค่าประกันภัยรถยนต์/อุปกรณ์, ภาษีประจำปี, ค่าธรรมเนียมต่างๆ ที่ไม่ใช่ค่าบำรุงรักษาโดยตรง แต่ต้องจ่ายทุกปี (ใช้อัตราเงินเฟ้อเดียวกับค่าบำรุงรักษาด้านซ้าย)</span>
+            </div>
+          </div>
           <div class="field-row">
             <div class="field">
               <label>มูลค่าซากเมื่อหมดอายุ <span class="hint">% ของทุน</span></label>
@@ -1571,6 +1578,7 @@
       ['อายุการใช้งานอุปกรณ์', val('f-lifespan')+' ปี'],
       ['ปีที่จะขาย/รับมูลค่าซาก', val('f-sell-year')+' ปี'],
       ['ค่าบำรุงรักษา', fmt0(parseFloat(val('f-maintenance'))||0)+' บาท/ปี'],
+      ['ค่าใช้จ่ายอื่นๆ (ประกัน/ภาษี/ค่าธรรมเนียม)', fmt0(parseFloat(val('f-other-cost'))||0)+' บาท/ปี'],
       ['เงินเฟ้อค่าบำรุงรักษา', val('f-maint-inflation')+' %/ปี'],
       ['ประสิทธิภาพลดลงต่อปี', val('f-degradation')+' %/ปี'],
       ['มูลค่าซากเมื่อหมดอายุ', val('f-salvage')+' % ของทุน'],
@@ -1589,7 +1597,7 @@
   }
 
   ['f-cost','f-subsidy','f-downpayment','f-loan-rate','f-loan-term','f-escalation',
-   'f-lifespan','f-maintenance','f-maint-inflation','f-degradation','f-salvage','f-sell-year','f-discount','f-co2']
+   'f-lifespan','f-maintenance','f-maint-inflation','f-other-cost','f-degradation','f-salvage','f-sell-year','f-discount','f-co2']
    .forEach(id=> document.getElementById(id).addEventListener('input', calculate));
 
   /* ---------------- Finance helpers ---------------- */
@@ -1632,6 +1640,7 @@
     const escalation = (parseFloat(document.getElementById('f-escalation').value)||0)/100;
     const lifespan = Math.max(parseInt(document.getElementById('f-lifespan').value)||1,1);
     const maintenance0 = parseFloat(document.getElementById('f-maintenance').value)||0;
+    const otherCost0 = parseFloat(document.getElementById('f-other-cost').value)||0;
     const maintInflation = (parseFloat(document.getElementById('f-maint-inflation').value)||0)/100;
     const degradation = (parseFloat(document.getElementById('f-degradation').value)||0)/100;
     const salvagePct = parseFloat(document.getElementById('f-salvage').value)||0;
@@ -1681,11 +1690,12 @@
     for(let t=1;t<=effectiveYears;t++){
       const savings_t = annualSavings0 * Math.pow(1+escalation,t-1) * Math.pow(1-degradation,t-1);
       const maint_t = maintenance0 * Math.pow(1+maintInflation,t-1);
+      const otherCost_t = otherCost0 * Math.pow(1+maintInflation,t-1);
       const co2_t = annualCo2Kg0 * Math.pow(1-degradation,t-1);
       const special_t = annualSpecial0 * Math.pow(1-degradation,t-1);
       const capex_t = majorCapexEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
       const repairAvoided_t = vehicleRepairEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
-      let assetNet_t = savings_t - maint_t - capex_t + repairAvoided_t;
+      let assetNet_t = savings_t - maint_t - otherCost_t - capex_t + repairAvoided_t;
       let ownerNet_t = assetNet_t - ((loanEnabled && t<=loanTerm) ? annualLoanPayment : 0);
       if(t===effectiveYears){
         const salvage = vehicleSalvageOverrideBaht!==null ? vehicleSalvageOverrideBaht : (cost*salvagePct/100);
@@ -1715,7 +1725,7 @@
 
       years.push(t);
       grossSavingsArr.push(savings_t);
-      maintArr.push(maint_t + capex_t - repairAvoided_t + ((loanEnabled && t<=loanTerm)?annualLoanPayment:0));
+      maintArr.push(maint_t + otherCost_t + capex_t - repairAvoided_t + ((loanEnabled && t<=loanTerm)?annualLoanPayment:0));
       netCFArr.push(ownerNet_t);
       ownerCFArr.push(cumOwner);
     }
