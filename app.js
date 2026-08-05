@@ -92,6 +92,7 @@
             <button type="button" class="btn-add-period" id="capex-add-btn">+ เพิ่มรายการ</button>
             <span class="note" id="capex-empty-note">ไม่มีรายการ (จะไม่มีผลต่อการคำนวณ)</span>
           </div>
+          <span class="note" id="capex-range-warning" style="display:none;color:var(--rust);"></span>
           <span class="note">แต่ละรายการจะถูกหักออกจากกระแสเงินสดเป็นก้อนเดียวในปีที่ระบุ ต่างจาก "ค่าบำรุงรักษา" ด้านล่างที่หักซ้ำทุกปี</span>
         </div>
       </div>
@@ -144,7 +145,7 @@
             <div class="field">
               <label>อายุการใช้งานอุปกรณ์ <span class="hint">ปี</span></label>
               <input type="number" id="f-lifespan" value="20" min="1" />
-              <span class="note" id="f-lifespan-note" style="display:none;">ในแท็บรถยนต์ ค่านี้คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)</span>
+              <span class="note" id="f-lifespan-note" style="display:none;">ในแท็บรถยนต์ ค่านี้คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย เพราะขายรถไปแล้วเทียบต่อไม่ได้ (แก้ไขตัวเลขต้นทางด้านบนแทน)</span>
             </div>
             <div class="field">
               <label>ประสิทธิภาพลดลงต่อปี <span class="hint">% / ปี</span></label>
@@ -444,6 +445,7 @@
 
     applyIceModeUI(false); // รีเซ็ตให้ค่าเริ่มต้น (แสดงผ่อน/ส่วนลด, label ปกติ) — แท็บ BEV/Hybrid จะตั้งค่าที่ถูกต้องเองด้านล่าง
     renderSubcalc(key);
+    updateRangeWarning('capex-rows','capex-range-warning');
     calculate();
   }
 
@@ -624,7 +626,8 @@
               '<button type="button" class="btn-add-period" id="v-repair-add-btn">+ เพิ่มรายการ</button>',
               '<span class="note" id="v-repair-empty-note">ไม่มีรายการ</span>',
             '</div>',
-            '<span class="note">เช่น เปลี่ยนแบตเตอรี่ 12V, ช่วงล่าง, ระบบเกียร์, แอร์ — ค่าใช้จ่ายเหล่านี้จะ “ประหยัดได้” ถ้าเปลี่ยนมาใช้รถใหม่แทน จึงถูกนับเป็นผลประหยัดในปีที่ระบุ นอกเหนือจากค่าน้ำมันที่ประหยัดได้ทุกเดือน</span></div>',
+            '<span class="note" id="v-repair-range-warning" style="display:none;color:var(--rust);"></span>',
+            '<span class="note">เช่น เปลี่ยนแบตเตอรี่ 12V, ช่วงล่าง, ระบบเกียร์, แอร์ — ค่าใช้จ่ายเหล่านี้จะ “ประหยัดได้” ถ้าเปลี่ยนมาใช้รถใหม่แทน จึงถูกนับเป็นผลประหยัดในปีที่ระบุ นอกเหนือจากค่าน้ำมันที่ประหยัดได้ทุกเดือน — รายการที่เกินปีที่จะขายจะไม่ถูกนับ</span></div>',
           '</div>',
         '</div>',
         '<div class="field-row">',
@@ -651,12 +654,16 @@
       applyIceModeUI(document.getElementById('v-compare-mode').value==='ice');
       document.getElementById('v-repair-add-btn').addEventListener('click', function(){
         document.getElementById('v-repair-rows').appendChild(createYearAmountRow(5, 15000, ()=>{
-          updateEmptyNote('v-repair-rows','v-repair-empty-note'); updateBevPreview(); calculate();
+          updateEmptyNote('v-repair-rows','v-repair-empty-note');
+          updateRangeWarning('v-repair-rows','v-repair-range-warning');
+          updateBevPreview(); calculate();
         }));
         updateEmptyNote('v-repair-rows','v-repair-empty-note');
+        updateRangeWarning('v-repair-rows','v-repair-range-warning');
         calculate();
       });
       updateEmptyNote('v-repair-rows','v-repair-empty-note');
+      updateRangeWarning('v-repair-rows','v-repair-range-warning');
       ['v-bev-price','v-bev-resale','v-bev-maint','v-bev-other','v-ref-price','v-ref-resale','v-ref-maint','v-ref-other',
        'v-kmpl','v-nocar-cost','v-keepold-kmpl','v-keepold-maint','v-keepold-other',
        'v-distance','v-fuel-price','v-kwh100','v-home-share','v-public-rate'].forEach(id=>{
@@ -664,6 +671,8 @@
       });
       document.getElementById('v-hold-years').addEventListener('input', ()=>{
         syncHoldYears('v-hold-years');
+        updateRangeWarning('v-repair-rows','v-repair-range-warning');
+        updateRangeWarning('capex-rows','capex-range-warning');
         updateBevPreview(); calculate();
       });
       updateBevPreview();
@@ -731,7 +740,8 @@
               '<button type="button" class="btn-add-period" id="h-repair-add-btn">+ เพิ่มรายการ</button>',
               '<span class="note" id="h-repair-empty-note">ไม่มีรายการ</span>',
             '</div>',
-            '<span class="note">เช่น เปลี่ยนแบตเตอรี่ 12V, ช่วงล่าง, ระบบเกียร์, แอร์ — ค่าใช้จ่ายเหล่านี้จะ “ประหยัดได้” ถ้าเปลี่ยนมาใช้รถใหม่แทน จึงถูกนับเป็นผลประหยัดในปีที่ระบุ นอกเหนือจากค่าน้ำมันที่ประหยัดได้ทุกเดือน</span></div>',
+            '<span class="note" id="h-repair-range-warning" style="display:none;color:var(--rust);"></span>',
+            '<span class="note">เช่น เปลี่ยนแบตเตอรี่ 12V, ช่วงล่าง, ระบบเกียร์, แอร์ — ค่าใช้จ่ายเหล่านี้จะ “ประหยัดได้” ถ้าเปลี่ยนมาใช้รถใหม่แทน จึงถูกนับเป็นผลประหยัดในปีที่ระบุ นอกเหนือจากค่าน้ำมันที่ประหยัดได้ทุกเดือน — รายการที่เกินปีที่จะขายจะไม่ถูกนับ</span></div>',
           '</div>',
         '</div>',
         '<div class="field-row">',
@@ -777,12 +787,16 @@
       });
       document.getElementById('h-repair-add-btn').addEventListener('click', function(){
         document.getElementById('h-repair-rows').appendChild(createYearAmountRow(5, 15000, ()=>{
-          updateEmptyNote('h-repair-rows','h-repair-empty-note'); updateHybridPreview(); calculate();
+          updateEmptyNote('h-repair-rows','h-repair-empty-note');
+          updateRangeWarning('h-repair-rows','h-repair-range-warning');
+          updateHybridPreview(); calculate();
         }));
         updateEmptyNote('h-repair-rows','h-repair-empty-note');
+        updateRangeWarning('h-repair-rows','h-repair-range-warning');
         calculate();
       });
       updateEmptyNote('h-repair-rows','h-repair-empty-note');
+      updateRangeWarning('h-repair-rows','h-repair-range-warning');
       ['h-price','h-resale','h-maint','h-other','h-ref-price','h-ref-resale','h-ref-maint','h-ref-other',
        'h-kmpl-old','h-nocar-cost','h-keepold-kmpl','h-keepold-maint','h-keepold-other',
        'h-distance','h-fuel-price','h-kmpl-new','h-ev-share','h-ev-kwh100','h-home-share','h-public-rate'].forEach(id=>{
@@ -790,6 +804,8 @@
       });
       document.getElementById('h-hold-years').addEventListener('input', ()=>{
         syncHoldYears('h-hold-years');
+        updateRangeWarning('h-repair-rows','h-repair-range-warning');
+        updateRangeWarning('capex-rows','capex-range-warning');
         updateHybridPreview(); calculate();
       });
       updateHybridPreview();
@@ -1024,10 +1040,31 @@
     return events;
   }
 
+  // ปีสุดท้ายที่ระบบยังนับกระแสเงินสดอยู่จริง (เท่ากับ calculate() ใช้ภายใน) — ปีที่เกินกว่านี้ถือว่า "ขายไปแล้ว" ไม่นับต่อ
+  function getEffectiveYearsCap(){
+    const lifespan = Math.max(parseInt(document.getElementById('f-lifespan').value)||1, 1);
+    const sellYearRaw = parseInt(document.getElementById('f-sell-year').value)||lifespan;
+    return Math.min(Math.max(sellYearRaw,1), lifespan);
+  }
+
+  function updateRangeWarning(containerId, warningId){
+    const el = document.getElementById(warningId);
+    if(!el) return;
+    const cap = getEffectiveYearsCap();
+    const outOfRange = getEventsFromContainer(containerId).filter(e=>e.year>cap);
+    if(outOfRange.length>0){
+      el.style.display = 'block';
+      el.textContent = '⚠ รายการปีที่ '+outOfRange.map(e=>e.year).join(', ')+' เกินปีที่จะขาย/อายุใช้งาน ('+cap+' ปี) จะไม่ถูกนับในการคำนวณ';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
   /* ---------- Major CAPEX events (เปลี่ยนอะไหล่/บำรุงรักษาใหญ่ ระบุปีได้ — หัวข้อเงินลงทุนกลาง) ---------- */
   function createCapexRow(year, amount){
     return createYearAmountRow(year, amount, ()=>{
       updateEmptyNote('capex-rows','capex-empty-note');
+      updateRangeWarning('capex-rows','capex-range-warning');
       calculate();
     });
   }
@@ -1293,6 +1330,8 @@
     const years = Math.max(parseInt(document.getElementById(fieldId).value)||1, 1);
     document.getElementById('f-lifespan').value = years;
     document.getElementById('f-sell-year').value = years;
+    // หมายเหตุ: ในแท็บรถยนต์ ราคาขายที่กรอกไว้คือมูลค่า ณ ปีที่ขายเท่านั้น เกินกว่านั้นไม่มีความหมาย (ขายไปแล้วเทียบต่อไม่ได้)
+    // จึง sync อายุการใช้งานอุปกรณ์ให้เท่ากับปีที่จะขายเสมอ ต่างจากอุปกรณ์ทั่วไปที่อายุใช้งานกับปีที่ขายเป็นคนละเรื่องกันได้
   }
 
   function computeBevDetail(){
@@ -1603,9 +1642,11 @@
   document.getElementById('capex-add-btn').addEventListener('click', function(){
     document.getElementById('capex-rows').appendChild(createCapexRow(5, 20000));
     updateCapexEmptyNote();
+    updateRangeWarning('capex-rows','capex-range-warning');
     calculate();
   });
   updateCapexEmptyNote();
+  updateRangeWarning('capex-rows','capex-range-warning');
   document.getElementById('f-elec-rate').addEventListener('input', ()=>{
     if(EQUIPMENT[activeTab].subcalc==='solar') updateSolarPreview();
     if(EQUIPMENT[activeTab].subcalc==='other') updateOtherPreview();
@@ -1620,6 +1661,9 @@
       // ปีที่จะขาย/อายุการใช้งาน กระทบมูลค่าซากแบบค่าเสื่อมราคาเส้นตรงของแท็บรถยนต์ ต้องคำนวณเงินลงทุน/มูลค่าซากใหม่
       if(EQUIPMENT[activeTab].subcalc==='bev') updateBevPreview();
       if(EQUIPMENT[activeTab].subcalc==='hybrid') updateHybridPreview();
+      updateRangeWarning('capex-rows','capex-range-warning');
+      updateRangeWarning('v-repair-rows','v-repair-range-warning');
+      updateRangeWarning('h-repair-rows','h-repair-range-warning');
       calculate();
     });
   });
