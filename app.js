@@ -48,17 +48,17 @@
 
         <div class="field-row">
           <div class="field">
-            <label>เงินลงทุนเริ่มต้น <span class="hint">บาท</span></label>
+            <label id="f-cost-label">เงินลงทุนเริ่มต้น <span class="hint">บาท</span></label>
             <input type="number" id="f-cost" value="150000" min="0" />
             <span class="note" id="f-cost-note" style="display:none;">คำนวณอัตโนมัติจากข้อมูลในแท็บที่เลือกด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)</span>
           </div>
-          <div class="field">
+          <div class="field" id="f-subsidy-field">
             <label>เงินอุดหนุน/ส่วนลด <span class="hint">บาท</span></label>
             <input type="number" id="f-subsidy" value="0" min="0" />
           </div>
         </div>
 
-        <div class="toggle-row">
+        <div class="toggle-row" id="f-loan-toggle-row">
           <input type="checkbox" id="f-loan-enabled" />
           <label for="f-loan-enabled">ผ่อนชำระผ่านสินเชื่อ (ไม่จ่ายเงินสดเต็มจำนวน)</label>
         </div>
@@ -421,6 +421,7 @@
       : (isWaterRecycle ? 'อัตราต้นทุนเพิ่มขึ้นเฉลี่ย (น้ำ/ไฟ/สารเคมี) <span class="hint">% / ปี</span>'
       : 'อัตราค่าไฟเพิ่มขึ้นเฉลี่ย <span class="hint">% / ปี</span>');
 
+    applyIceModeUI(false); // รีเซ็ตให้ค่าเริ่มต้น (แสดงผ่อน/ส่วนลด, label ปกติ) — แท็บ BEV/Hybrid จะตั้งค่าที่ถูกต้องเองด้านล่าง
     renderSubcalc(key);
     calculate();
   }
@@ -554,7 +555,7 @@
         '<div class="field-row single">',
           '<div class="field"><label>เทียบกับ</label>',
           '<select id="v-compare-mode">',
-            '<option value="ice">รถน้ำมันที่จะซื้อแทน</option>',
+            '<option value="ice">ซื้อรถน้ำมัน</option>',
             '<option value="nocar">ไม่มีรถ ใช้บริการเดินทางแทน</option>',
             '<option value="keepold">ไม่ซื้อรถ ใช้รถเดิมต่อ</option>',
           '</select></div>',
@@ -609,8 +610,10 @@
         document.getElementById('v-ice-fields').style.display = this.value==='ice' ? 'block' : 'none';
         document.getElementById('v-nocar-fields').style.display = this.value==='nocar' ? 'block' : 'none';
         document.getElementById('v-keepold-fields').style.display = this.value==='keepold' ? 'block' : 'none';
+        applyIceModeUI(this.value==='ice');
         updateBevPreview(); calculate();
       });
+      applyIceModeUI(document.getElementById('v-compare-mode').value==='ice');
       document.getElementById('v-repair-add-btn').addEventListener('click', function(){
         document.getElementById('v-repair-rows').appendChild(createYearAmountRow(5, 15000, ()=>{
           updateEmptyNote('v-repair-rows','v-repair-empty-note'); updateBevPreview(); calculate();
@@ -644,7 +647,7 @@
         '<div class="field-row single">',
           '<div class="field"><label>เทียบกับ</label>',
           '<select id="h-compare-mode">',
-            '<option value="ice">รถน้ำมันทั่วไปที่จะซื้อแทน</option>',
+            '<option value="ice">ซื้อรถน้ำมัน</option>',
             '<option value="nocar">ไม่มีรถ ใช้บริการเดินทางแทน</option>',
             '<option value="keepold">ไม่ซื้อรถ ใช้รถเดิมต่อ</option>',
           '</select></div>',
@@ -714,8 +717,10 @@
         document.getElementById('h-ice-fields').style.display = this.value==='ice' ? 'block' : 'none';
         document.getElementById('h-nocar-fields').style.display = this.value==='nocar' ? 'block' : 'none';
         document.getElementById('h-keepold-fields').style.display = this.value==='keepold' ? 'block' : 'none';
+        applyIceModeUI(this.value==='ice');
         updateHybridPreview(); calculate();
       });
+      applyIceModeUI(document.getElementById('h-compare-mode').value==='ice');
       document.getElementById('h-phev-mode').addEventListener('change', function(){
         document.getElementById('h-phev-fields').style.display = this.value==='phev' ? 'block' : 'none';
         updateHybridPreview(); calculate();
@@ -1194,6 +1199,21 @@
   // เขียนเงินลงทุนเริ่มต้นที่คำนวณได้ ลงในช่องกลาง f-cost ให้อัตโนมัติ
   // ส่วนมูลค่าซาก ใช้ตัวเงินจริง (vehicleSalvageOverrideBaht) เป็นค่าที่นำไปคำนวณจริงเสมอ
   // ช่อง f-salvage (%) ใช้แสดงผลเพื่อความเข้าใจเท่านั้น ไม่ใช่ค่าที่ระบบใช้คำนวณอีกต่อไป
+  // โหมด "ซื้อรถน้ำมัน" (ice) เทียบราคาส่วนต่างระหว่างสองคัน — ตัวเลือกผ่อนชำระ/เงินอุดหนุนจึงไม่เข้ากับตัวเลข "ส่วนต่าง" นี้ ซ่อนไว้
+  // ส่วนโหมดอื่น (ไม่มีรถ/ใช้รถเดิม) เงินลงทุนคือราคาเต็มของรถจริงๆ ตัวเลือกผ่อน/ส่วนลดยังใช้ได้ตามปกติ
+  function applyIceModeUI(isIce){
+    document.getElementById('f-subsidy-field').style.display = isIce ? 'none' : 'flex';
+    document.getElementById('f-subsidy-field').parentElement.style.gridTemplateColumns = isIce ? '1fr' : '1fr 1fr';
+    document.getElementById('f-loan-toggle-row').style.display = isIce ? 'none' : 'flex';
+    if(isIce){
+      document.getElementById('loan-fields').style.display = 'none';
+      document.getElementById('f-loan-enabled').checked = false;
+    }
+    document.getElementById('f-cost-label').innerHTML = isIce
+      ? 'เงินทุนส่วนต่างราคา <span class="hint">บาท</span>'
+      : 'เงินลงทุนเริ่มต้น <span class="hint">บาท</span>';
+  }
+
   function applyVehicleInvestment(investmentPremium, salvageBaht){
     const costEl = document.getElementById('f-cost');
     const salvageEl = document.getElementById('f-salvage');
