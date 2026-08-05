@@ -155,6 +155,25 @@
   }
   .btn-add-period:hover{background:var(--primary);color:#fff;}
 
+  .capex-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .capex-row .cx-year-wrap{display:flex;align-items:center;gap:6px;}
+  .capex-row .cx-year-wrap span{font-size:12px;color:var(--ink-faint);white-space:nowrap;}
+  .capex-row input.cx-year{
+    width:64px;font-family:'JetBrains Mono',monospace;font-size:13px;border:1px solid var(--line);
+    border-radius:8px;background:var(--paper);padding:7px 8px;color:var(--ink);text-align:center;
+  }
+  .capex-row .cx-amount-wrap{display:flex;align-items:center;gap:6px;flex:1;min-width:140px;}
+  .capex-row .cx-amount-wrap span{font-size:12px;color:var(--ink-faint);white-space:nowrap;}
+  .capex-row input.cx-amount{
+    flex:1;min-width:0;font-family:'JetBrains Mono',monospace;font-size:13px;border:1px solid var(--line);
+    border-radius:8px;background:var(--paper);padding:7px 8px;color:var(--ink);text-align:right;
+  }
+  .capex-row .cx-remove{
+    flex-shrink:0;border:1px solid var(--line);background:var(--paper-raised);border-radius:8px;
+    width:28px;height:28px;color:var(--rust);cursor:pointer;font-size:13px;line-height:1;
+  }
+  .capex-row .cx-remove:hover{background:var(--rust-soft);}
+
   .advanced-toggle{
     display:flex;align-items:center;justify-content:space-between;
     cursor:pointer;padding:2px 0 10px;
@@ -355,7 +374,7 @@
     <h1>คำนวณว่าการลงทุน <em>ประหยัดพลังงาน</em><br/>ของคุณคุ้มทุนเมื่อไหร่ แม่นยำแค่ไหน</h1>
     <p>ใส่ตัวเลขจริงของอุปกรณ์ที่สนใจ ระบบจะคำนวณให้ครบทุกปัจจัย — เงินลงทุนสุทธิ ดอกเบี้ยเงินกู้ ค่าไฟที่เพิ่มขึ้นทุกปี ค่าบำรุงรักษา การเสื่อมประสิทธิภาพของอุปกรณ์ มูลค่าซาก ไปจนถึงมูลค่าเงินตามเวลา (NPV/IRR) เพื่อให้เห็นภาพการคืนทุนที่ใกล้เคียงความจริงที่สุด</p>
     <div class="hero-meta">
-      <span>เลือกได้ <b>7</b> ประเภทอุปกรณ์</span>
+      <span>เลือกได้ <b>8</b> ประเภทอุปกรณ์</span>
       <span>คำนวณ <b>9</b> ตัวชี้วัดทางการเงิน</span>
       <span>อัปเดตผลลัพธ์ <b>ทันที</b></span>
     </div>
@@ -387,7 +406,7 @@
           <div class="field">
             <label>เงินลงทุนเริ่มต้น <span class="hint">บาท</span></label>
             <input type="number" id="f-cost" value="150000" min="0" />
-            <span class="note" id="f-cost-note" style="display:none;">คำนวณอัตโนมัติจากราคาซื้อ/ขายคืนในแท็บรถยนต์ด้านซ้าย (แก้ไขราคาซื้อ-ขายคืนด้านบนแทน)</span>
+            <span class="note" id="f-cost-note" style="display:none;">คำนวณอัตโนมัติจากข้อมูลในแท็บที่เลือกด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)</span>
           </div>
           <div class="field">
             <label>เงินอุดหนุน/ส่วนลด <span class="hint">บาท</span></label>
@@ -418,6 +437,19 @@
             </div>
           </div>
         </div>
+
+        <div class="advanced-toggle" id="capex-toggle" style="border-top:1px dashed var(--line);margin-top:14px;padding-top:14px;">
+          <span><b>ค่าเปลี่ยนอะไหล่/บำรุงรักษาใหญ่ระหว่างทาง</b> — เช่น เปลี่ยนเมมเบรน, อินเวอร์เตอร์, แบตเตอรี่ (ถ้ามี)</span>
+          <span class="chev" id="capex-chev">›</span>
+        </div>
+        <div class="advanced-body" id="capex-body" style="border-top:none;padding-top:0;">
+          <div id="capex-rows"></div>
+          <div class="period-actions">
+            <button type="button" class="btn-add-period" id="capex-add-btn">+ เพิ่มรายการ</button>
+            <span class="note" id="capex-empty-note">ไม่มีรายการ (จะไม่มีผลต่อการคำนวณ)</span>
+          </div>
+          <span class="note">แต่ละรายการจะถูกหักออกจากกระแสเงินสดเป็นก้อนเดียวในปีที่ระบุ ต่างจาก "ค่าบำรุงรักษา" ด้านล่างที่หักซ้ำทุกปี</span>
+        </div>
       </div>
 
       <div class="panel">
@@ -445,6 +477,7 @@
             <div class="field">
               <label>อายุการใช้งานอุปกรณ์ <span class="hint">ปี</span></label>
               <input type="number" id="f-lifespan" value="20" min="1" />
+              <span class="note" id="f-lifespan-note" style="display:none;">ในแท็บรถยนต์ ค่านี้คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)</span>
             </div>
             <div class="field">
               <label>ค่าบำรุงรักษา <span class="hint">บาท/ปี</span></label>
@@ -466,12 +499,12 @@
             <div class="field">
               <label>มูลค่าซากเมื่อหมดอายุ <span class="hint">% ของทุน</span></label>
               <input type="number" id="f-salvage" value="5" min="0" max="100" />
-              <span class="note" id="f-salvage-note" style="display:none;">ในแท็บรถยนต์ ตัวเลข % นี้เป็นค่าอ้างอิงเท่านั้น ระบบใช้ผลต่างราคาขายคืนที่เป็นบาทจริง (ดูในกล่องพรีวิวด้านซ้าย) ไปคำนวณเสมอ แม้ % จะแสดง 0 เมื่อราคาซื้อสองคันเท่ากันก็ตาม</span>
+              <span class="note" id="f-salvage-note" style="display:none;">ในแท็บนี้ ตัวเลข % นี้เป็นค่าอ้างอิงเท่านั้น ระบบใช้มูลค่าซากที่เป็นบาทจริง (ดูในกล่องพรีวิวด้านซ้าย) ไปคำนวณเสมอ แม้ % จะแสดง 0 ได้ในบางกรณี</span>
             </div>
             <div class="field">
               <label>ปีที่จะขาย/รับมูลค่าซาก <span class="hint">ปี</span></label>
               <input type="number" id="f-sell-year" value="20" min="1" />
-              <span class="note">ถ้าขายก่อนครบอายุใช้งาน (เช่น ขายรถก่อนครบ) ระบบจะหยุดนับเงินประหยัดหลังปีนี้ และรับมูลค่าซากเป็นเงินก้อนในปีนี้แทน ค่าเริ่มต้น = อายุการใช้งานอุปกรณ์</span>
+              <span class="note" id="f-sell-year-note">ถ้าขายก่อนครบอายุใช้งาน ระบบจะหยุดนับเงินประหยัดหลังปีนี้ และรับมูลค่าซากเป็นเงินก้อนในปีนี้แทน ค่าเริ่มต้น = อายุการใช้งานอุปกรณ์</span>
             </div>
           </div>
           <div class="field-row">
@@ -676,6 +709,11 @@
       label:'เครื่องกรองน้ำ', desc:'เทียบกับค่าน้ำดื่มบรรจุขวด/ถังที่ไม่ต้องซื้ออีกต่อไป',
       subcalc:'water',
       defaults:{cost:15000, subsidy:0, lifespan:5, maintenance:1800, degradation:0, salvage:0}
+    },
+    waterrecycle: {
+      label:'ระบบรีไซเคิลน้ำ (RO/UF)', desc:'ระบบบำบัดน้ำกลับมาใช้ใหม่ระดับโรงงาน/อาคาร วิเคราะห์แบบ CAPEX/OPEX เต็มรูปแบบ',
+      subcalc:'waterrecycle',
+      defaults:{cost:2700000, subsidy:0, lifespan:10, maintenance:0, degradation:1, salvage:5}
     }
   };
 
@@ -700,7 +738,8 @@
     });
     document.getElementById('active-equipment-desc').textContent = EQUIPMENT[key].desc;
     const d = EQUIPMENT[key].defaults;
-    const isVehicle = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid');
+    const isVehicle = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid' || EQUIPMENT[key].subcalc==='waterrecycle');
+    const isCarWithHoldYears = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid');
     document.getElementById('f-cost').value = d.cost;
     document.getElementById('f-subsidy').value = d.subsidy;
     document.getElementById('f-lifespan').value = d.lifespan;
@@ -712,21 +751,32 @@
     document.getElementById('f-salvage').readOnly = isVehicle;
     document.getElementById('f-cost').classList.toggle('auto-filled', isVehicle);
     document.getElementById('f-salvage').classList.toggle('auto-filled', isVehicle);
+    document.getElementById('f-lifespan').readOnly = isCarWithHoldYears;
+    document.getElementById('f-sell-year').readOnly = isCarWithHoldYears;
+    document.getElementById('f-lifespan').classList.toggle('auto-filled', isCarWithHoldYears);
+    document.getElementById('f-sell-year').classList.toggle('auto-filled', isCarWithHoldYears);
+    document.getElementById('f-lifespan-note').style.display = isCarWithHoldYears ? 'block' : 'none';
+    document.getElementById('f-sell-year-note').textContent = isCarWithHoldYears
+      ? 'คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)'
+      : 'ถ้าขายก่อนครบอายุใช้งาน ระบบจะหยุดนับเงินประหยัดหลังปีนี้ และรับมูลค่าซากเป็นเงินก้อนในปีนี้แทน ค่าเริ่มต้น = อายุการใช้งานอุปกรณ์';
     document.getElementById('f-cost-note').style.display = isVehicle ? 'block' : 'none';
     document.getElementById('f-salvage-note').style.display = isVehicle ? 'block' : 'none';
     vehicleSalvageOverrideBaht = null;
 
     // เครื่องกรองน้ำ: ประหยัด "ค่าน้ำ" ไม่ใช่พลังงานไฟฟ้า — ปรับข้อความ/ซ่อนฟิลด์ที่ไม่เกี่ยวข้อง
     const isWater = (EQUIPMENT[key].subcalc==='water');
-    document.getElementById('energy-panel-title').textContent = isWater ? 'ราคาน้ำและอัตราการเพิ่มขึ้น' : 'ค่าไฟฟ้าและพลังงาน';
+    const isWaterRecycle = (EQUIPMENT[key].subcalc==='waterrecycle');
+    document.getElementById('energy-panel-title').textContent = isWater ? 'ราคาน้ำและอัตราการเพิ่มขึ้น' : (isWaterRecycle ? 'ต้นทุนพลังงานและอัตราการเพิ่มขึ้น' : 'ค่าไฟฟ้าและพลังงาน');
     document.getElementById('energy-panel-desc').textContent = isWater
       ? 'เครื่องกรองน้ำประหยัด “ค่าน้ำดื่ม” ไม่ใช่พลังงานไฟฟ้า จึงไม่ใช้อัตราค่าไฟฟ้า และไม่มีตัวเลข CO2 จากไฟฟ้า'
-      : 'ใช้คำนวณมูลค่าเงินที่ประหยัดได้ และปริมาณ CO2 ที่ลดได้';
+      : (isWaterRecycle ? 'อัตราค่าไฟฟ้าใช้คำนวณต้นทุนไฟฟ้าของระบบ RO/UF (ตัวแปร C) ส่วนอัตราเพิ่มขึ้นเฉลี่ยใช้กับผลประหยัดสุทธิทั้งโครงการ'
+      : 'ใช้คำนวณมูลค่าเงินที่ประหยัดได้ และปริมาณ CO2 ที่ลดได้');
     document.getElementById('f-elec-rate-field').style.display = isWater ? 'none' : 'flex';
     document.getElementById('f-elec-rate-field').parentElement.style.gridTemplateColumns = isWater ? '1fr' : '1fr 1fr';
     document.getElementById('f-escalation-label').innerHTML = isWater
       ? 'อัตราราคาน้ำดื่มเพิ่มขึ้นเฉลี่ย <span class="hint">% / ปี</span>'
-      : 'อัตราค่าไฟเพิ่มขึ้นเฉลี่ย <span class="hint">% / ปี</span>';
+      : (isWaterRecycle ? 'อัตราต้นทุนเพิ่มขึ้นเฉลี่ย (น้ำ/ไฟ/สารเคมี) <span class="hint">% / ปี</span>'
+      : 'อัตราค่าไฟเพิ่มขึ้นเฉลี่ย <span class="hint">% / ปี</span>');
 
     renderSubcalc(key);
     calculate();
@@ -850,10 +900,13 @@
     if(type==='bev'){
       panel.innerHTML = [
         '<h2>รถยนต์ไฟฟ้า (BEV)</h2>',
-        '<p class="desc">กรอกราคาซื้อและราคาขายคืน ระบบจะคำนวณ “เงินลงทุนเริ่มต้น” และ “มูลค่าซาก” ในหัวข้อด้านล่างให้อัตโนมัติ</p>',
+        '<p class="desc">กรอกราคาซื้อและจำนวนปีที่จะใช้รถ ระบบจะคำนวณ “เงินลงทุนเริ่มต้น”, “อายุการใช้งาน”, “ปีที่จะขาย” และ “มูลค่าซาก” ในหัวข้อด้านล่างให้อัตโนมัติ</p>',
         '<div class="field-row">',
           '<div class="field"><label>ราคารถ BEV ที่จะซื้อ <span class="hint">บาท</span></label><input type="number" id="v-bev-price" value="900000" min="0"/></div>',
-          '<div class="field"><label>ราคาขายคืน BEV เมื่อครบอายุ <span class="hint">บาท</span></label><input type="number" id="v-bev-resale" value="300000" min="0"/></div>',
+          '<div class="field"><label>จำนวนปีที่จะใช้รถ <span class="hint">ปี</span></label><input type="number" id="v-hold-years" value="8" min="1"/></div>',
+        '</div>',
+        '<div class="field-row single">',
+          '<div class="field"><label>ราคาขาย BEV เมื่อถือครองครบตามจำนวนปีข้างต้น <span class="hint">บาท</span></label><input type="number" id="v-bev-resale" value="300000" min="0"/></div>',
         '</div>',
         '<div class="field-row single">',
           '<div class="field"><label>เทียบกับ</label>',
@@ -866,7 +919,7 @@
           '<div class="ref-box-label">ข้อมูลอ้างอิง — รถที่เอามาเปรียบเทียบ (ไม่ใช่รถ BEV)</div>',
           '<div class="field-row">',
             '<div class="field"><label>ราคารถน้ำมันที่เทียบเคียง <span class="hint">บาท</span></label><input type="number" id="v-ref-price" value="650000" min="0"/></div>',
-            '<div class="field"><label>ราคาขายคืนรถน้ำมันเมื่อครบอายุ <span class="hint">บาท</span></label><input type="number" id="v-ref-resale" value="150000" min="0"/></div>',
+            '<div class="field"><label>ราคาขายเมื่อถือครองครบเท่ากัน <span class="hint">บาท</span></label><input type="number" id="v-ref-resale" value="150000" min="0"/></div>',
           '</div>',
           '<div class="field-row single">',
             '<div class="field"><label>อัตราสิ้นเปลืองรถน้ำมันที่เทียบเคียง <span class="hint">กม./ลิตร</span></label><input type="number" id="v-kmpl" value="12" min="0.1" step="0.1"/></div>',
@@ -901,16 +954,23 @@
        'v-distance','v-fuel-price','v-kwh100','v-home-share','v-public-rate'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateBevPreview(); calculate(); });
       });
+      document.getElementById('v-hold-years').addEventListener('input', ()=>{
+        syncHoldYears('v-hold-years');
+        updateBevPreview(); calculate();
+      });
       updateBevPreview();
     }
 
     if(type==='hybrid'){
       panel.innerHTML = [
         '<h2>รถยนต์ไฮบริด</h2>',
-        '<p class="desc">กรอกราคาซื้อและราคาขายคืน ระบบจะคำนวณ “เงินลงทุนเริ่มต้น” และ “มูลค่าซาก” ในหัวข้อด้านล่างให้อัตโนมัติ</p>',
+        '<p class="desc">กรอกราคาซื้อและจำนวนปีที่จะใช้รถ ระบบจะคำนวณ “เงินลงทุนเริ่มต้น”, “อายุการใช้งาน”, “ปีที่จะขาย” และ “มูลค่าซาก” ในหัวข้อด้านล่างให้อัตโนมัติ</p>',
         '<div class="field-row">',
           '<div class="field"><label>ราคารถไฮบริดที่จะซื้อ <span class="hint">บาท</span></label><input type="number" id="h-price" value="850000" min="0"/></div>',
-          '<div class="field"><label>ราคาขายคืนไฮบริดเมื่อครบอายุ <span class="hint">บาท</span></label><input type="number" id="h-resale" value="280000" min="0"/></div>',
+          '<div class="field"><label>จำนวนปีที่จะใช้รถ <span class="hint">ปี</span></label><input type="number" id="h-hold-years" value="8" min="1"/></div>',
+        '</div>',
+        '<div class="field-row single">',
+          '<div class="field"><label>ราคาขายไฮบริดเมื่อถือครองครบตามจำนวนปีข้างต้น <span class="hint">บาท</span></label><input type="number" id="h-resale" value="280000" min="0"/></div>',
         '</div>',
         '<div class="field-row single">',
           '<div class="field"><label>เทียบกับ</label>',
@@ -923,7 +983,7 @@
           '<div class="ref-box-label">ข้อมูลอ้างอิง — รถที่เอามาเปรียบเทียบ (ไม่ใช่รถไฮบริด)</div>',
           '<div class="field-row">',
             '<div class="field"><label>ราคารถรุ่นเครื่องยนต์ปกติ <span class="hint">บาท</span></label><input type="number" id="h-ref-price" value="750000" min="0"/></div>',
-            '<div class="field"><label>ราคาขายคืนรุ่นเครื่องยนต์ปกติ <span class="hint">บาท</span></label><input type="number" id="h-ref-resale" value="200000" min="0"/></div>',
+            '<div class="field"><label>ราคาขายเมื่อถือครองครบเท่ากัน <span class="hint">บาท</span></label><input type="number" id="h-ref-resale" value="200000" min="0"/></div>',
           '</div>',
           '<div class="field-row single">',
             '<div class="field"><label>อัตราสิ้นเปลืองรถรุ่นเครื่องยนต์ปกติ <span class="hint">กม./ลิตร</span></label><input type="number" id="h-kmpl-old" value="12" min="0.1" step="0.1"/></div>',
@@ -977,6 +1037,10 @@
        'h-distance','h-fuel-price','h-kmpl-new','h-ev-share','h-ev-kwh100','h-home-share','h-public-rate'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateHybridPreview(); calculate(); });
       });
+      document.getElementById('h-hold-years').addEventListener('input', ()=>{
+        syncHoldYears('h-hold-years');
+        updateHybridPreview(); calculate();
+      });
       updateHybridPreview();
     }
 
@@ -998,6 +1062,113 @@
         document.getElementById(id).addEventListener('input', ()=>{ updateWaterPreview(); calculate(); });
       });
       updateWaterPreview();
+    }
+
+    if(type==='waterrecycle'){
+      panel.innerHTML = [
+        '<h2>ระบบรีไซเคิลน้ำ (RO/UF)</h2>',
+        '<p class="desc">วิเคราะห์แบบ CAPEX/OPEX เต็มรูปแบบ — เงินลงทุนและมูลค่าประหยัดจะคำนวณเข้าหัวข้อ “เงินลงทุนและแหล่งเงินทุน” ด้านล่างให้อัตโนมัติ ค่าไฟฟ้าใช้อัตราจากหัวข้อ “ค่าไฟฟ้าและพลังงาน” ด้านล่าง (ตัวแปร C)</p>',
+
+        '<div class="ref-box">',
+          '<div class="ref-box-label">ส่วนที่ 1 — ข้อมูลพื้นฐาน</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>ประเภทระบบ</label>',
+            '<select id="wr-type">',
+              '<option value="ufro" selected>UF + RO (คุณภาพน้ำสูง กำจัดเกลือแร่ได้)</option>',
+              '<option value="uf">UF อย่างเดียว (กรองตะกอน/แบคทีเรีย ไม่กำจัดเกลือแร่)</option>',
+            '</select>',
+            '<span class="note">ระบบจะแนะนำอัตราค่าไฟฟ้า/สารเคมีให้ตามประเภท และตัดรายการที่ไม่เกี่ยวข้องออกให้อัตโนมัติเมื่อเลือก UF อย่างเดียว</span></div>',
+          '</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ปริมาณน้ำรีไซเคิลที่ต้องการผลิต (A) <span class="hint">ลบ.ม./วัน</span></label><input type="number" id="wr-a" value="100" min="0"/></div>',
+            '<div class="field"><label>อัตราค่าน้ำประปาปัจจุบัน (B) <span class="hint">บาท/ลบ.ม.</span></label><input type="number" id="wr-b" value="30" min="0" step="0.1"/></div>',
+          '</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>จำนวนวันเดินระบบต่อปี (D) <span class="hint">วัน/ปี</span></label><input type="number" id="wr-d" value="300" min="1" max="366"/></div>',
+          '</div>',
+        '</div>',
+
+        '<div class="ref-box">',
+          '<div class="ref-box-label">ส่วนที่ 2 — เงินลงทุนเริ่มต้น (CAPEX)</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>ค่าเครื่องจักร อุปกรณ์ (ถัง/ปั๊ม/UF/RO) — E1 <span class="hint">บาท</span></label><input type="number" id="wr-e1" value="2000000" min="0"/></div>',
+          '</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>ค่าติดตั้ง เดินท่อ ระบบไฟฟ้าควบคุม — E2 <span class="hint">บาท</span></label><input type="number" id="wr-e2" value="500000" min="0"/></div>',
+          '</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>ค่าใช้จ่ายอื่นๆ (ปรับพื้นที่/ขออนุญาต) — E3 <span class="hint">บาท</span></label><input type="number" id="wr-e3" value="200000" min="0"/></div>',
+          '</div>',
+          '<div class="sub-preview" id="wr-e-total">รวมเงินลงทุน (E): — บาท</div>',
+        '</div>',
+
+        '<div class="ref-box">',
+          '<div class="ref-box-label">ส่วนที่ 3 — ต้นทุนการดำเนินงาน (OPEX ต่อวัน)</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>สัดส่วนไฟฟ้าที่ใช้ต่อหน่วยน้ำ <span class="hint">kWh/ลบ.ม.</span></label><input type="number" id="wr-f1-factor" value="1.65" min="0" step="0.05"/>',
+            '<span class="note" id="wr-f1-range">ช่วงอ้างอิง UF+RO: ~1.5–1.8 kWh/ลบ.ม.</span></div>',
+            '<div class="field"><label>ค่าสารเคมี & ไส้กรองต่อหน่วยน้ำ <span class="hint">บาท/ลบ.ม.</span></label><input type="number" id="wr-f2-rate" value="8" min="0" step="0.1"/>',
+            '<span class="note" id="wr-f2-range">ช่วงอ้างอิง UF+RO: ~6–10 บาท/ลบ.ม.</span></div>',
+          '</div>',
+          '<div class="sub-preview" id="wr-f1f2-live">F1 (ค่าไฟฟ้า) = — บาท/วัน · F2 (สารเคมี/ไส้กรอง) = — บาท/วัน</div>',
+          '<div class="field-row single" id="wr-f3-wrap" style="margin-top:14px;">',
+            '<div class="field"><label>ค่าจัดการน้ำทิ้ง RO — F3 <span class="hint">บาท/วัน</span></label><input type="number" id="wr-f3" value="500" min="0"/>',
+            '<span class="note">กรอกเองตามจริง — ค่าประเมินทั่วไป ~500 บาท/วัน ถ้าวนกลับบ่อเดิม ไม่มีสูตรตายตัวเพราะขึ้นกับวิธีจัดการหน้างาน</span></div>',
+          '</div>',
+          '<div class="sub-preview" id="wr-f-total">รวมต้นทุนเดินระบบ (F): — บาท/วัน</div>',
+        '</div>',
+
+        '<div class="ref-box">',
+          '<div class="ref-box-label">ส่วนที่ 4 — ผลประหยัดที่ได้รับ (บาท/วัน)</div>',
+          '<div class="sub-preview" id="wr-s1-live">S1 (ประหยัดค่าน้ำประปา = A × B) = — บาท/วัน</div>',
+          '<div id="wr-s2-wrap">',
+            '<div class="field-row single" style="margin-top:14px;">',
+              '<div class="field"><label>ค่าเคมี Cooling Tower ต่อหน่วยน้ำ <span class="hint">บาท/ลบ.ม.</span></label><input type="number" id="wr-s2-rate" value="10" min="0" step="0.1"/>',
+              '<span class="note">ค่าแนะนำ ~10 บาท/ลบ.ม. (ปรับตามชนิด/ปริมาณสารเคมีที่ใช้จริงในระบบ Cooling Tower ของแต่ละโรงงาน)</span></div>',
+            '</div>',
+            '<div class="sub-preview" id="wr-s2-live">S2 (ประหยัดค่าเคมี Cooling Tower) = — บาท/วัน</div>',
+          '</div>',
+          '<div class="field-row single" style="margin-top:14px;">',
+            '<div class="field"><label>ประหยัดค่าบำบัดน้ำเสียทิ้ง (ถ้ามี) — S3 <span class="hint">บาท/วัน</span></label><input type="number" id="wr-s3" value="0" min="0"/>',
+            '<span class="note">กรอกเองตามจริง — ไม่มีสูตรตายตัว ใส่ 0 ถ้าไม่มี</span></div>',
+          '</div>',
+          '<div class="sub-preview" id="wr-s-total">รวมผลประหยัด (S): — บาท/วัน</div>',
+        '</div>',
+
+        '<div class="sub-preview" id="wr-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
+      ].join('');
+
+      const WR_TYPE_DEFAULTS = {
+        ufro: { f1:1.65, f1range:'1.5–1.8', f2:8, f2range:'6–10' },
+        uf:   { f1:0.4,  f1range:'0.3–0.5', f2:2.75, f2range:'2–3.5' }
+      };
+      function applyWrTypeDefaults(){
+        const t = document.getElementById('wr-type').value;
+        const d = WR_TYPE_DEFAULTS[t];
+        document.getElementById('wr-f1-factor').value = d.f1;
+        document.getElementById('wr-f2-rate').value = d.f2;
+        document.getElementById('wr-f1-range').textContent = 'ช่วงอ้างอิง '+(t==='uf'?'UF':'UF+RO')+': ~'+d.f1range+' kWh/ลบ.ม.';
+        document.getElementById('wr-f2-range').textContent = 'ช่วงอ้างอิง '+(t==='uf'?'UF':'UF+RO')+': ~'+d.f2range+' บาท/ลบ.ม.';
+        const isUfOnly = (t==='uf');
+        document.getElementById('wr-f3-wrap').style.display = isUfOnly ? 'none' : '';
+        document.getElementById('wr-s2-wrap').style.display = isUfOnly ? 'none' : 'block';
+        if(isUfOnly){
+          document.getElementById('wr-f3').value = 0;
+          document.getElementById('wr-s2-rate').value = 0;
+        } else {
+          document.getElementById('wr-f3').value = 500;
+          document.getElementById('wr-s2-rate').value = 10;
+        }
+      }
+      document.getElementById('wr-type').addEventListener('change', ()=>{
+        applyWrTypeDefaults();
+        updateWaterRecyclePreview(); calculate();
+      });
+
+      ['wr-a','wr-b','wr-d','wr-e1','wr-e2','wr-e3','wr-f1-factor','wr-f2-rate','wr-f3','wr-s2-rate','wr-s3'].forEach(id=>{
+        document.getElementById(id).addEventListener('input', ()=>{ updateWaterRecyclePreview(); calculate(); });
+      });
+      updateWaterRecyclePreview();
     }
 
     if(type==='led'){
@@ -1064,6 +1235,42 @@
     const val = String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0');
     el.value = val;
     el.dataset.prev = val;
+  }
+
+  /* ---------- Major CAPEX events (เปลี่ยนอะไหล่/บำรุงรักษาใหญ่ ระบุปีได้) ---------- */
+  function createCapexRow(year, amount){
+    const row = document.createElement('div');
+    row.className = 'capex-row';
+    row.innerHTML = [
+      '<div class="cx-year-wrap"><span>ปีที่</span><input type="number" class="cx-year" value="'+year+'" min="1"/></div>',
+      '<div class="cx-amount-wrap"><input type="number" class="cx-amount" value="'+amount+'" min="0"/><span>บาท</span></div>',
+      '<button type="button" class="cx-remove" title="ลบรายการนี้">✕</button>'
+    ].join('');
+    row.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', calculate);
+    });
+    row.querySelector('.cx-remove').addEventListener('click', ()=>{
+      row.remove();
+      updateCapexEmptyNote();
+      calculate();
+    });
+    return row;
+  }
+
+  function updateCapexEmptyNote(){
+    const count = document.querySelectorAll('#capex-rows .capex-row').length;
+    document.getElementById('capex-empty-note').style.display = count===0 ? 'inline' : 'none';
+  }
+
+  function getMajorCapexEvents(){
+    const rows = document.querySelectorAll('#capex-rows .capex-row');
+    const events = [];
+    rows.forEach(r=>{
+      const year = parseInt(r.querySelector('.cx-year').value)||0;
+      const amount = parseFloat(r.querySelector('.cx-amount').value)||0;
+      if(year>0 && amount>0) events.push({year, amount});
+    });
+    return events;
   }
 
   function createPeriodRow(start,end,pct){
@@ -1289,6 +1496,14 @@
     }
   }
 
+  // ซิงก์ "จำนวนปีที่จะใช้รถ" เข้ากับ "อายุการใช้งานอุปกรณ์" และ "ปีที่จะขาย" ที่ใช้ร่วมกันทั้งระบบ
+  // เพราะราคาขายที่กรอกในแท็บรถยนต์ตอนนี้หมายถึงมูลค่า ณ ปีที่ระบุนี้โดยตรง ไม่ต้องคำนวณค่าเสื่อมราคาอีกชั้น
+  function syncHoldYears(fieldId){
+    const years = Math.max(parseInt(document.getElementById(fieldId).value)||1, 1);
+    document.getElementById('f-lifespan').value = years;
+    document.getElementById('f-sell-year').value = years;
+  }
+
   function computeBevDetail(){
     const bevPrice = parseFloat(document.getElementById('v-bev-price').value)||0;
     const bevResale = parseFloat(document.getElementById('v-bev-resale').value)||0;
@@ -1318,7 +1533,7 @@
     const monthlyCo2Kg = (compareMode==='ice' ? litersAvoided*PETROL_CO2_PER_LITER : 0) - kwhUsed*co2Factor;
 
     const investmentPremium = bevPrice - refPrice;
-    const salvageBaht = bevResale - refResale;
+    const salvageBaht = bevResale - refResale; // ทั้งสองค่าคือราคาขาย ณ ปีที่ใช้จริง (จำนวนปีที่จะใช้รถ) ไม่ต้องคำนวณค่าเสื่อมราคาซ้อน
 
     return { baselineCostAvoided, elecCost, monthlySavings, monthlyCo2Kg, kwhUsed, investmentPremium, salvageBaht, compareMode };
   }
@@ -1342,7 +1557,7 @@
       (r.compareMode==='ice' ? 'ค่าน้ำมันที่ประหยัดได้' : 'ค่าเดินทางทางเลือกที่ไม่ต้องจ่าย')+' ~'+Math.round(r.baselineCostAvoided).toLocaleString('th-TH')+' บาท/เดือน',
       'ค่าไฟชาร์จที่ต้องจ่าย ~'+Math.round(r.elecCost).toLocaleString('th-TH')+' บาท/เดือน ('+r.kwhUsed.toFixed(0)+' หน่วย)',
       '<b>ประหยัดสุทธิ: '+Math.round(r.monthlySavings).toLocaleString('th-TH')+' บาท/เดือน</b>',
-      'เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ: '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท'
+      'เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ (ราคาขาย ณ ปีที่ระบุ): '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท'
     ];
     const warn = investmentWarningRow(Math.round(r.investmentPremium), r.compareMode);
     if(warn) rows.push(warn);
@@ -1392,7 +1607,7 @@
     }
 
     const investmentPremium = hybridPrice - refPrice;
-    const salvageBaht = hybridResale - refResale;
+    const salvageBaht = hybridResale - refResale; // ทั้งสองค่าคือราคาขาย ณ ปีที่ใช้จริง (จำนวนปีที่จะใช้รถ) ไม่ต้องคำนวณค่าเสื่อมราคาซ้อน
 
     return { litersSaved, hybridFuelCost, elecCost, effectiveKmpl, phevMode, monthlySavings, monthlyCo2Kg, investmentPremium, salvageBaht, compareMode };
   }
@@ -1408,10 +1623,61 @@
       rows.push('อัตราสิ้นเปลืองเทียบเท่า (รวมโหมดไฟฟ้า) ~'+(r.effectiveKmpl===null ? '∞ (ไม่ใช้น้ำมันเลย)' : r.effectiveKmpl.toFixed(1)+' กม./ลิตร'));
     }
     rows.push('<b>ประหยัดสุทธิ: '+Math.round(r.monthlySavings).toLocaleString('th-TH')+' บาท/เดือน</b>');
-    rows.push('เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ: '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท');
+    rows.push('เงินลงทุนเริ่มต้นที่คำนวณให้: '+Math.round(r.investmentPremium).toLocaleString('th-TH')+' บาท · มูลค่าซากสุทธิ (ราคาขาย ณ ปีที่ระบุ): '+Math.round(r.salvageBaht).toLocaleString('th-TH')+' บาท');
     const warn = investmentWarningRow(Math.round(r.investmentPremium), r.compareMode);
     if(warn) rows.push(warn);
     document.getElementById('v-hybrid-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
+  }
+
+  function computeWaterRecycleDetail(){
+    const waterType = (document.getElementById('wr-type')||{}).value || 'ufro';
+    const isUfOnly = (waterType==='uf');
+    const A = parseFloat(document.getElementById('wr-a').value)||0;
+    const B = parseFloat(document.getElementById('wr-b').value)||0;
+    const C = parseFloat(document.getElementById('f-elec-rate').value)||0;
+    const D = parseFloat(document.getElementById('wr-d').value)||0;
+    const E1 = parseFloat(document.getElementById('wr-e1').value)||0;
+    const E2 = parseFloat(document.getElementById('wr-e2').value)||0;
+    const E3 = parseFloat(document.getElementById('wr-e3').value)||0;
+    const f1Factor = parseFloat(document.getElementById('wr-f1-factor').value)||0;
+    const f2Rate = parseFloat(document.getElementById('wr-f2-rate').value)||0;
+    const F3 = isUfOnly ? 0 : (parseFloat(document.getElementById('wr-f3').value)||0);
+    const s2Rate = isUfOnly ? 0 : (parseFloat(document.getElementById('wr-s2-rate').value)||0);
+    const S3 = parseFloat(document.getElementById('wr-s3').value)||0;
+
+    const F1 = A*f1Factor*C;   // ค่าไฟฟ้าระบบ RO/UF = A × สัดส่วนไฟฟ้าต่อหน่วยน้ำ (kWh/ลบ.ม.) × C
+    const F2 = A*f2Rate;       // ค่าสารเคมี/ไส้กรอง = A × อัตราต่อหน่วยน้ำ
+    const S1 = A*B;            // ประหยัดค่าน้ำประปา = A × B (สูตรตรง ไม่ใช่ค่าประเมิน)
+    const S2 = A*s2Rate;       // ประหยัดค่าเคมี Cooling Tower = A × อัตราต่อหน่วยน้ำ (0 ถ้าเป็น UF อย่างเดียว)
+
+    const E = E1+E2+E3;
+    const F = F1+F2+F3;
+    const S = S1+S2+S3;
+    const netPerDay = S-F;
+    const netAnnual = netPerDay*D;
+    const monthlySavings = netAnnual/12;
+    const volumeAnnual = A*D; // ลบ.ม./ปี ที่รีไซเคิลได้จริง
+    const volumeMonth = volumeAnnual/12;
+
+    return { E, F, S, F1, F2, S1, S2, netPerDay, netAnnual, monthlySavings, volumeMonth, A, D };
+  }
+
+  function updateWaterRecyclePreview(){
+    const r = computeWaterRecycleDetail();
+    document.getElementById('wr-f1f2-live').textContent = 'F1 (ค่าไฟฟ้า) = '+fmt0(r.F1)+' บาท/วัน · F2 (สารเคมี/ไส้กรอง) = '+fmt0(r.F2)+' บาท/วัน';
+    document.getElementById('wr-s1-live').textContent = 'S1 (ประหยัดค่าน้ำประปา = A × B) = '+fmt0(r.S1)+' บาท/วัน';
+    document.getElementById('wr-s2-live').textContent = 'S2 (ประหยัดค่าเคมี Cooling Tower) = '+fmt0(r.S2)+' บาท/วัน';
+    document.getElementById('wr-e-total').textContent = 'รวมเงินลงทุน (E): '+fmt0(r.E)+' บาท';
+    document.getElementById('wr-f-total').textContent = 'รวมต้นทุนเดินระบบ (F): '+fmt0(r.F)+' บาท/วัน';
+    document.getElementById('wr-s-total').textContent = 'รวมผลประหยัด (S): '+fmt0(r.S)+' บาท/วัน';
+    applyVehicleInvestment(r.E, r.E*0.05); // ใช้กลไกเดียวกับแท็บรถยนต์: เติมเงินลงทุนอัตโนมัติ (มูลค่าซากประเมิน 5% ของทุน)
+    const rows = [
+      'ผลประหยัดสุทธิ (S-F) × D = '+fmt0(r.netAnnual)+' บาท/ปี',
+      'เทียบเท่า '+fmt0(r.monthlySavings)+' บาท/เดือน',
+      'ปริมาณน้ำรีไซเคิลได้ ~'+fmt0(r.volumeMonth)+' ลบ.ม./เดือน',
+      '<b>เงินลงทุนที่คำนวณให้ (E): '+fmt0(r.E)+' บาท</b>'
+    ];
+    document.getElementById('wr-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
   }
 
   function computeWaterDetail(){
@@ -1449,6 +1715,7 @@
     if(type==='bev') return computeBevDetail().monthlySavings;
     if(type==='hybrid') return computeHybridDetail().monthlySavings;
     if(type==='water') return computeWaterDetail().monthlySavings;
+    if(type==='waterrecycle') return computeWaterRecycleDetail().monthlySavings;
     return parseFloat(document.getElementById('d-savings').value)||0;
   }
 
@@ -1469,6 +1736,7 @@
     if(type==='bev') return computeBevDetail().monthlyCo2Kg;
     if(type==='hybrid') return computeHybridDetail().monthlyCo2Kg;
     if(type==='water') return 0; // ไม่คำนวณ CO2 จากขวด/ถังพลาสติกในรุ่นนี้
+    if(type==='waterrecycle') return 0; // ใช้การ์ด "ปริมาณน้ำที่รีไซเคิลได้" แทน CO2
     return ((parseFloat(document.getElementById('d-savings').value)||0)/rate)*co2Factor;
   }
 
@@ -1483,12 +1751,34 @@
     body.classList.toggle('open');
     chev.classList.toggle('open');
   });
+  document.getElementById('capex-toggle').addEventListener('click', function(){
+    const body = document.getElementById('capex-body');
+    const chev = document.getElementById('capex-chev');
+    body.classList.toggle('open');
+    chev.classList.toggle('open');
+  });
+  document.getElementById('capex-add-btn').addEventListener('click', function(){
+    document.getElementById('capex-rows').appendChild(createCapexRow(5, 20000));
+    updateCapexEmptyNote();
+    calculate();
+  });
+  updateCapexEmptyNote();
   document.getElementById('f-elec-rate').addEventListener('input', ()=>{
     if(EQUIPMENT[activeTab].subcalc==='solar') updateSolarPreview();
     if(EQUIPMENT[activeTab].subcalc==='other') updateOtherPreview();
     if(EQUIPMENT[activeTab].subcalc==='led') updateLedPreview();
     if(EQUIPMENT[activeTab].subcalc==='bev') updateBevPreview();
+    if(EQUIPMENT[activeTab].subcalc==='hybrid') updateHybridPreview();
+    if(EQUIPMENT[activeTab].subcalc==='waterrecycle') updateWaterRecyclePreview();
     calculate();
+  });
+  ['f-sell-year','f-lifespan'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', ()=>{
+      // ปีที่จะขาย/อายุการใช้งาน กระทบมูลค่าซากแบบค่าเสื่อมราคาเส้นตรงของแท็บรถยนต์ ต้องคำนวณเงินลงทุน/มูลค่าซากใหม่
+      if(EQUIPMENT[activeTab].subcalc==='bev') updateBevPreview();
+      if(EQUIPMENT[activeTab].subcalc==='hybrid') updateHybridPreview();
+      calculate();
+    });
   });
   document.getElementById('recalc-btn').addEventListener('click', calculate);
   document.getElementById('export-btn').addEventListener('click', prepareAndPrint);
@@ -1508,6 +1798,10 @@
       ['เงินอุดหนุน/ส่วนลด', fmt0(parseFloat(val('f-subsidy'))||0)+' บาท'],
       ['วิธีชำระเงิน', loanEnabled ? ('ผ่อนชำระ (ดาวน์ '+val('f-downpayment')+'%, ดอกเบี้ย '+val('f-loan-rate')+'%, '+val('f-loan-term')+' ปี)') : 'เงินสดเต็มจำนวน'],
     ];
+    const capexEvents = getMajorCapexEvents();
+    if(capexEvents.length>0){
+      items.push(['ค่าเปลี่ยนอะไหล่/บำรุงรักษาใหญ่', capexEvents.map(e=> 'ปี '+e.year+': '+fmt0(e.amount)+' บาท').join(', ')]);
+    }
     if(!isWaterCalc){
       items.push(['อัตราค่าไฟฟ้าปัจจุบัน', val('f-elec-rate')+' บาท/หน่วย']);
     }
@@ -1599,22 +1893,29 @@
       upfrontOutflow = netInvestment;
     }
 
-    const isWaterCalc = (EQUIPMENT[activeTab].subcalc==='water');
-    const annualBottles0 = isWaterCalc ? computeWaterDetail().bottlesMonth*12 : 0;
+    // การ์ด KPI พิเศษแทน CO2 สำหรับอุปกรณ์ที่ไม่เกี่ยวกับไฟฟ้าโดยตรง (เครื่องกรองน้ำ/ระบบรีไซเคิลน้ำ)
+    const specialKpiBySubcalc = {
+      water: { label:'ขวดพลาสติกที่ลดได้ตลอดอายุใช้งาน', unit:'ขวด', decimals:0, monthlyAmount: ()=> computeWaterDetail().bottlesMonth },
+      waterrecycle: { label:'ปริมาณน้ำที่รีไซเคิลได้ตลอดอายุโครงการ', unit:'ลบ.ม.', decimals:0, monthlyAmount: ()=> computeWaterRecycleDetail().volumeMonth }
+    };
+    const specialKpi = specialKpiBySubcalc[EQUIPMENT[activeTab].subcalc] || null;
+    const annualSpecial0 = specialKpi ? specialKpi.monthlyAmount()*12 : 0;
+    const majorCapexEvents = getMajorCapexEvents();
 
     const years=[], grossSavingsArr=[], maintArr=[], netCFArr=[], ownerCFArr=[];
     let cumUndiscounted = -netInvestment; // asset-level payback (ignores financing structure)
     let cumOwner = -upfrontOutflow;
     let cumDiscounted = -upfrontOutflow;
     let simplePaybackYear=null, discPaybackYear=null;
-    let totalLifetimeSavings=0, totalCo2Kg=0, totalBottles=0;
+    let totalLifetimeSavings=0, totalCo2Kg=0, totalSpecial=0;
 
     for(let t=1;t<=effectiveYears;t++){
       const savings_t = annualSavings0 * Math.pow(1+escalation,t-1) * Math.pow(1-degradation,t-1);
       const maint_t = maintenance0 * Math.pow(1+maintInflation,t-1);
       const co2_t = annualCo2Kg0 * Math.pow(1-degradation,t-1);
-      const bottles_t = annualBottles0 * Math.pow(1-degradation,t-1);
-      let assetNet_t = savings_t - maint_t;
+      const special_t = annualSpecial0 * Math.pow(1-degradation,t-1);
+      const capex_t = majorCapexEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
+      let assetNet_t = savings_t - maint_t - capex_t;
       let ownerNet_t = assetNet_t - ((loanEnabled && t<=loanTerm) ? annualLoanPayment : 0);
       if(t===effectiveYears){
         const salvage = vehicleSalvageOverrideBaht!==null ? vehicleSalvageOverrideBaht : (cost*salvagePct/100);
@@ -1640,11 +1941,11 @@
       cumOwner += ownerNet_t;
       totalLifetimeSavings += savings_t;
       totalCo2Kg += co2_t;
-      totalBottles += bottles_t;
+      totalSpecial += special_t;
 
       years.push(t);
       grossSavingsArr.push(savings_t);
-      maintArr.push(maint_t + ((loanEnabled && t<=loanTerm)?annualLoanPayment:0));
+      maintArr.push(maint_t + capex_t + ((loanEnabled && t<=loanTerm)?annualLoanPayment:0));
       netCFArr.push(ownerNet_t);
       ownerCFArr.push(cumOwner);
     }
@@ -1665,9 +1966,9 @@
     document.getElementById('kpi-npv').innerHTML = fmt0(npv)+'<span>บาท</span>';
     document.getElementById('kpi-irr').innerHTML = (irr===null? 'N/A' : fmt1(irr*100)+'<span>%/ปี</span>');
     document.getElementById('kpi-total-savings').innerHTML = fmt0(totalLifetimeSavings)+'<span>บาท</span>';
-    if(isWaterCalc){
-      document.getElementById('kpi-co2-label').textContent = 'ขวดพลาสติกที่ลดได้ตลอดอายุใช้งาน';
-      document.getElementById('kpi-co2').innerHTML = fmt0(totalBottles)+'<span id="kpi-co2-unit">ขวด</span>';
+    if(specialKpi){
+      document.getElementById('kpi-co2-label').textContent = specialKpi.label;
+      document.getElementById('kpi-co2').innerHTML = fmt0(totalSpecial)+'<span id="kpi-co2-unit">'+specialKpi.unit+'</span>';
     } else {
       document.getElementById('kpi-co2-label').textContent = 'CO2 ที่ลดได้ตลอดอายุใช้งาน';
       document.getElementById('kpi-co2').innerHTML = fmt1(totalCo2Kg/1000)+'<span id="kpi-co2-unit">ตัน</span>';
