@@ -946,9 +946,17 @@
     if(type==='led'){
       panel.innerHTML = [
         '<h2>ไฟ LED ทั้งอาคาร</h2>',
-        '<p class="desc">กรอกจำนวนหลอด กำลังไฟ ราคา และอายุการใช้งานของหลอดเดิมเทียบกับหลอด LED ใหม่ ระบบจะคำนวณ “เงินลงทุนเริ่มต้น” ในหัวข้อด้านล่างให้อัตโนมัติจากจำนวนหลอด × ราคาหลอด LED (บวกค่าติดตั้งถ้ามี) พร้อมทั้งค่าไฟและค่าเปลี่ยนหลอดที่ประหยัดได้</p>',
+        '<p class="desc">กรอกจำนวนหลอด กำลังไฟ ราคา และอายุการใช้งานของหลอดเดิมเทียบกับหลอด LED ใหม่ ระบบจะคำนวณ “เงินลงทุนเริ่มต้น” ในหัวข้อด้านล่างให้อัตโนมัติ พร้อมทั้งค่าไฟและค่าเปลี่ยนหลอดที่ประหยัดได้</p>',
         '<div class="field-row single">',
           '<div class="field"><label>จำนวนหลอด/โคมที่จะเปลี่ยน <span class="hint">หลอด</span></label><input type="number" id="l-count" value="20" min="0"/></div>',
+        '</div>',
+        '<div class="field-row single">',
+          '<div class="field"><label>สถานะหลอดเดิม</label>',
+          '<select id="l-old-status">',
+            '<option value="working">ยังใช้งานได้ดี — เปลี่ยนก่อนกำหนดเพื่อประหยัดไฟ (คิดเงินลงทุนเต็มราคาหลอด LED)</option>',
+            '<option value="expiring">ใกล้หมดอายุแล้ว — ต้องเปลี่ยนอยู่ดีไม่ว่าจะเปลี่ยนเป็น LED หรือไม่ (คิดแค่ส่วนต่างราคา LED ลบราคาหลอดเดิม)</option>',
+          '</select>',
+          '<span class="note">ถ้าหลอดเดิมใกล้หมดอายุอยู่แล้ว ต่อให้ไม่เปลี่ยนเป็น LED ก็ต้องซื้อหลอดใหม่มาเปลี่ยนอยู่ดี เงินลงทุนที่แท้จริงของการเลือก LED จึงเป็นแค่ส่วนต่างราคา ไม่ใช่ราคาเต็ม</span></div>',
         '</div>',
         '<div class="field-row">',
           '<div class="field"><label>กำลังไฟหลอดเดิม <span class="hint">วัตต์/หลอด</span></label><input type="number" id="l-old-watt" value="36" min="0"/></div>',
@@ -978,6 +986,7 @@
         '</div>',
         '<div class="sub-preview" id="l-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
+      document.getElementById('l-old-status').addEventListener('change', ()=>{ updateLedPreview(); calculate(); });
       ['l-count','l-old-watt','l-new-watt','l-hours','l-old-price','l-old-life','l-new-price','l-new-life','l-install-cost','l-labor-cost'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateLedPreview(); calculate(); });
       });
@@ -1291,20 +1300,30 @@
 
     const monthlySavings = elecSavingsMonth + replacementSavingsMonth;
     const installCost = parseFloat(document.getElementById('l-install-cost').value)||0;
-    const investmentTotal = count*newPrice + installCost;
-    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear, investmentTotal };
+    const oldStatus = document.getElementById('l-old-status').value;
+    // ถ้าหลอดเดิมใกล้หมดอายุอยู่แล้ว ต้องซื้อหลอดใหม่มาเปลี่ยนอยู่ดีไม่ว่าจะเลือก LED หรือไม่ เงินลงทุนที่แท้จริงของ LED
+    // จึงเป็นแค่ "ส่วนต่างราคา" ไม่ใช่ราคาเต็ม — ถ้ายังใช้งานได้ดีอยู่ (เปลี่ยนก่อนกำหนด) ถึงจะคิดราคาเต็ม
+    const bulbCost = (oldStatus==='expiring') ? (newPrice-oldPrice)*count : count*newPrice;
+    const investmentTotal = bulbCost + installCost;
+    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear, investmentTotal, oldStatus };
   }
 
   function updateLedPreview(){
     const r = computeLedDetail();
     const costEl = document.getElementById('f-cost');
     if(costEl) costEl.value = Math.round(r.investmentTotal);
+    const investLabel = r.oldStatus==='expiring'
+      ? 'เงินลงทุนเริ่มต้นที่คำนวณให้ (คิดเฉพาะส่วนต่างราคา เพราะหลอดเดิมต้องเปลี่ยนอยู่ดี): '
+      : 'เงินลงทุนเริ่มต้นที่คำนวณให้ (ราคาเต็มหลอด LED): ';
     const rows = [
       'ลดการใช้ไฟ ~'+r.monthlyKwh.toFixed(1)+' หน่วย/เดือน (ประหยัด '+fmt0(r.elecSavingsMonth)+' บาท/เดือน)',
       'ค่าเปลี่ยนหลอดเดิมโดยประมาณ ~'+fmt0(r.oldReplacementCostYear)+' บาท/ปี · หลอด LED ~'+fmt0(r.newReplacementCostYear)+' บาท/ปี',
       '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>',
-      'เงินลงทุนเริ่มต้นที่คำนวณให้: '+fmt0(r.investmentTotal)+' บาท'
+      investLabel+fmt0(r.investmentTotal)+' บาท'
     ];
+    if(r.investmentTotal<=0){
+      rows.push('<span style="color:var(--primary-dark);">หลอด LED ถูกกว่าหรือเท่ากับหลอดเดิมที่ต้องซื้ออยู่ดี จึงไม่มีเงินลงทุนส่วนเพิ่ม (ประหยัดตั้งแต่วันแรก)</span>');
+    }
     document.getElementById('l-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
 
     const warnEl = document.getElementById('l-life-warning');
