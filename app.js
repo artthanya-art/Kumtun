@@ -396,6 +396,7 @@
     const d = EQUIPMENT[key].defaults;
     const isVehicle = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid' || EQUIPMENT[key].subcalc==='waterrecycle');
     const isCarWithHoldYears = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid');
+    const noSalvage = ['led','insulation','water'].includes(key); // อุปกรณ์ที่ไม่มีตลาดขายซากจริง (เช็คจากรหัสแท็บ ไม่ใช่ subcalc type เพราะบางแท็บใช้ type ร่วมกัน)
     document.getElementById('f-cost').value = d.cost;
     document.getElementById('f-subsidy').value = d.subsidy;
     document.getElementById('f-lifespan').value = d.lifespan;
@@ -403,11 +404,11 @@
     document.getElementById('f-maintenance').value = d.maintenance;
     document.getElementById('f-other-cost').value = 0;
     document.getElementById('f-degradation').value = d.degradation;
-    document.getElementById('f-salvage').value = d.salvage;
+    document.getElementById('f-salvage').value = noSalvage ? 0 : d.salvage;
     document.getElementById('f-cost').readOnly = isVehicle;
-    document.getElementById('f-salvage').readOnly = isVehicle;
+    document.getElementById('f-salvage').readOnly = isVehicle || noSalvage;
     document.getElementById('f-cost').classList.toggle('auto-filled', isVehicle);
-    document.getElementById('f-salvage').classList.toggle('auto-filled', isVehicle);
+    document.getElementById('f-salvage').classList.toggle('auto-filled', isVehicle || noSalvage);
     document.getElementById('f-lifespan').readOnly = isCarWithHoldYears;
     document.getElementById('f-sell-year').readOnly = isCarWithHoldYears;
     document.getElementById('f-lifespan').classList.toggle('auto-filled', isCarWithHoldYears);
@@ -417,7 +418,10 @@
       ? 'คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)'
       : 'ถ้าขายก่อนครบอายุใช้งาน ระบบจะหยุดนับเงินประหยัดหลังปีนี้ และรับมูลค่าซากเป็นเงินก้อนในปีนี้แทน ค่าเริ่มต้น = อายุการใช้งานอุปกรณ์';
     document.getElementById('f-cost-note').style.display = isVehicle ? 'block' : 'none';
-    document.getElementById('f-salvage-note').style.display = isVehicle ? 'block' : 'none';
+    document.getElementById('f-salvage-note').style.display = (isVehicle || noSalvage) ? 'block' : 'none';
+    document.getElementById('f-salvage-note').textContent = noSalvage
+      ? 'อุปกรณ์ประเภทนี้ไม่มีตลาดขายซาก ระบบล็อกไว้ที่ 0 อัตโนมัติ'
+      : 'ในแท็บนี้ ตัวเลข % นี้เป็นค่าอ้างอิงเท่านั้น ระบบใช้มูลค่าซากที่เป็นบาทจริง (ดูในกล่องพรีวิวด้านซ้าย) ไปคำนวณเสมอ แม้ % จะแสดง 0 ได้ในบางกรณี';
     document.getElementById('f-maintenance').readOnly = isCarWithHoldYears;
     document.getElementById('f-other-cost').readOnly = isCarWithHoldYears;
     document.getElementById('f-maintenance').classList.toggle('auto-filled', isCarWithHoldYears);
