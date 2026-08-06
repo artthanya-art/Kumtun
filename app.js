@@ -941,7 +941,7 @@
     if(type==='led'){
       panel.innerHTML = [
         '<h2>ไฟ LED ทั้งอาคาร</h2>',
-        '<p class="desc">กรอกจำนวนหลอด และกำลังไฟของหลอดเดิมเทียบกับหลอด LED ใหม่ เพื่อคำนวณไฟที่ประหยัดได้จริง</p>',
+        '<p class="desc">กรอกจำนวนหลอด กำลังไฟ ราคา และอายุการใช้งานของหลอดเดิมเทียบกับหลอด LED ใหม่ เพื่อคำนวณทั้งค่าไฟที่ประหยัดได้ และค่าเปลี่ยนหลอดที่ประหยัดได้จากอายุการใช้งานที่ต่างกัน</p>',
         '<div class="field-row single">',
           '<div class="field"><label>จำนวนหลอด/โคมที่จะเปลี่ยน <span class="hint">หลอด</span></label><input type="number" id="l-count" value="20" min="0"/></div>',
         '</div>',
@@ -952,9 +952,21 @@
         '<div class="field-row single">',
           '<div class="field"><label>ชั่วโมงใช้งานเฉลี่ย <span class="hint">ชม./วัน</span></label><input type="number" id="l-hours" value="10" min="0" step="0.5"/></div>',
         '</div>',
+        '<div class="ref-box">',
+          '<div class="ref-box-label">ราคา &amp; อายุการใช้งานหลอด — ไว้เทียบค่าเปลี่ยนหลอด</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ราคาหลอดเดิม/หลอด <span class="hint">บาท</span></label><input type="number" id="l-old-price" value="120" min="0"/></div>',
+            '<div class="field"><label>อายุการใช้งานหลอดเดิม <span class="hint">ชั่วโมง</span></label><input type="number" id="l-old-life" value="10000" min="1"/></div>',
+          '</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ราคาหลอด LED ใหม่/หลอด <span class="hint">บาท</span></label><input type="number" id="l-new-price" value="150" min="0"/></div>',
+            '<div class="field"><label>อายุการใช้งานหลอด LED <span class="hint">ชั่วโมง</span></label><input type="number" id="l-new-life" value="30000" min="1"/></div>',
+          '</div>',
+          '<span class="note">ค่าเริ่มต้นอ้างอิงหลอดฟลูออเรสเซนต์ทั่วไป (~10,000 ชม.) เทียบหลอด LED (~30,000 ชม.) — ปรับตามสเปกหลอดจริงได้</span>',
+        '</div>',
         '<div class="sub-preview" id="l-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
-      ['l-count','l-old-watt','l-new-watt','l-hours'].forEach(id=>{
+      ['l-count','l-old-watt','l-new-watt','l-hours','l-old-price','l-old-life','l-new-price','l-new-life'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateLedPreview(); calculate(); });
       });
       updateLedPreview();
@@ -1247,14 +1259,33 @@
     const newWatt = parseFloat(document.getElementById('l-new-watt').value)||0;
     const hours = parseFloat(document.getElementById('l-hours').value)||0;
     const rate = parseFloat(document.getElementById('f-elec-rate').value)||0;
+    const oldPrice = parseFloat(document.getElementById('l-old-price').value)||0;
+    const oldLife = parseFloat(document.getElementById('l-old-life').value)||1;
+    const newPrice = parseFloat(document.getElementById('l-new-price').value)||0;
+    const newLife = parseFloat(document.getElementById('l-new-life').value)||1;
+
     const diffW = Math.max(oldWatt-newWatt,0)*count;
     const kwhMonth = diffW/1000*hours*30;
-    return { monthlySavings: kwhMonth*rate, monthlyKwh: kwhMonth };
+    const elecSavingsMonth = kwhMonth*rate;
+
+    // ค่าเปลี่ยนหลอดเฉลี่ยต่อปี = จำนวนครั้งที่ต้องเปลี่ยนต่อปี (ตามชั่วโมงใช้งานจริง หารด้วยอายุใช้งานหลอด) × จำนวนหลอด × ราคา/หลอด
+    const annualHours = hours*365;
+    const oldReplacementCostYear = (annualHours/oldLife)*count*oldPrice;
+    const newReplacementCostYear = (annualHours/newLife)*count*newPrice;
+    const replacementSavingsMonth = (oldReplacementCostYear-newReplacementCostYear)/12;
+
+    const monthlySavings = elecSavingsMonth + replacementSavingsMonth;
+    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth };
   }
 
   function updateLedPreview(){
     const r = computeLedDetail();
-    document.getElementById('l-preview').textContent = 'ลดการใช้ไฟ ~'+r.monthlyKwh.toFixed(1)+' หน่วย/เดือน · ประหยัดโดยประมาณ '+Math.round(r.monthlySavings).toLocaleString('th-TH')+' บาท/เดือน';
+    const rows = [
+      'ลดการใช้ไฟ ~'+r.monthlyKwh.toFixed(1)+' หน่วย/เดือน (ประหยัด '+fmt0(r.elecSavingsMonth)+' บาท/เดือน)',
+      'ค่าเปลี่ยนหลอดเดิมโดยประมาณ ~'+fmt0(r.oldReplacementCostYear)+' บาท/ปี · หลอด LED ~'+fmt0(r.newReplacementCostYear)+' บาท/ปี',
+      '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>'
+    ];
+    document.getElementById('l-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
   }
 
   function computeOtherDetail(){
