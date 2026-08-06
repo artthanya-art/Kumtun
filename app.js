@@ -970,13 +970,15 @@
           '<span class="note">ค่าเริ่มต้นอ้างอิงหลอดฟลูออเรสเซนต์ทั่วไป (~10,000 ชม.) เทียบหลอด LED (~30,000 ชม.) — ปรับตามสเปกหลอดจริงได้ ค่าที่ต่ำผิดปกติ (เช่น ต่ำกว่า 1,000 ชม.) จะทำให้ระบบคิดว่าต้องเปลี่ยนหลอดบ่อยเกินจริง ยอดประหยัดจะพุ่งสูงผิดปกติ</span>',
           '<span class="note" id="l-life-warning" style="display:none;color:var(--rust);"></span>',
         '</div>',
-        '<div class="field-row single">',
-          '<div class="field"><label>ค่าติดตั้ง/ค่าแรงเพิ่มเติม (ถ้ามี) <span class="hint">บาท</span></label><input type="number" id="l-install-cost" value="0" min="0"/>',
-          '<span class="note">นอกเหนือจากค่าหลอด เช่น ค่าช่าง ค่าอุปกรณ์ติดตั้งเพิ่มเติม</span></div>',
+        '<div class="field-row">',
+          '<div class="field"><label>ค่าติดตั้งเริ่มต้น (ครั้งเดียว) <span class="hint">บาท</span></label><input type="number" id="l-install-cost" value="0" min="0"/>',
+          '<span class="note">นอกเหนือจากค่าหลอด เช่น ค่าอุปกรณ์/สายไฟเพิ่มเติมตอนติดตั้งครั้งแรก — นับรวมในเงินลงทุนเริ่มต้นครั้งเดียว</span></div>',
+          '<div class="field"><label>ค่าแรงเปลี่ยนหลอดต่อครั้ง <span class="hint">บาท/หลอด/ครั้ง</span></label><input type="number" id="l-labor-cost" value="0" min="0"/>',
+          '<span class="note">ค่าช่าง/ค่าแรงทุกครั้งที่ต้องเปลี่ยนหลอด (ทั้งหลอดเดิมและหลอด LED) นับซ้ำทุกครั้งที่ถึงรอบเปลี่ยน ต่างจากค่าติดตั้งเริ่มต้นด้านซ้ายที่นับครั้งเดียว</span></div>',
         '</div>',
         '<div class="sub-preview" id="l-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
-      ['l-count','l-old-watt','l-new-watt','l-hours','l-old-price','l-old-life','l-new-price','l-new-life','l-install-cost'].forEach(id=>{
+      ['l-count','l-old-watt','l-new-watt','l-hours','l-old-price','l-old-life','l-new-price','l-new-life','l-install-cost','l-labor-cost'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateLedPreview(); calculate(); });
       });
       updateLedPreview();
@@ -1278,12 +1280,13 @@
     const kwhMonth = diffW/1000*hours*30;
     const elecSavingsMonth = kwhMonth*rate;
 
-    // ค่าเปลี่ยนหลอดเฉลี่ยต่อปี = จำนวนครั้งที่ต้องเปลี่ยนต่อปี (ตามชั่วโมงใช้งานจริง หารด้วยอายุใช้งานหลอด) × จำนวนหลอด × ราคา/หลอด
+    // ค่าเปลี่ยนหลอดเฉลี่ยต่อปี = จำนวนครั้งที่ต้องเปลี่ยนต่อปี (ตามชั่วโมงใช้งานจริง หารด้วยอายุใช้งานหลอด) × จำนวนหลอด × (ราคาหลอด + ค่าแรงต่อครั้ง)
+    const laborCost = parseFloat(document.getElementById('l-labor-cost').value)||0;
     const annualHours = hours*365;
     const oldReplacementsPerYear = annualHours/oldLife;
     const newReplacementsPerYear = annualHours/newLife;
-    const oldReplacementCostYear = oldReplacementsPerYear*count*oldPrice;
-    const newReplacementCostYear = newReplacementsPerYear*count*newPrice;
+    const oldReplacementCostYear = oldReplacementsPerYear*count*(oldPrice+laborCost);
+    const newReplacementCostYear = newReplacementsPerYear*count*(newPrice+laborCost);
     const replacementSavingsMonth = (oldReplacementCostYear-newReplacementCostYear)/12;
 
     const monthlySavings = elecSavingsMonth + replacementSavingsMonth;
