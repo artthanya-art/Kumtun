@@ -960,13 +960,14 @@
           '<div class="ref-box-label">ราคา &amp; อายุการใช้งานหลอด — ไว้เทียบค่าเปลี่ยนหลอด</div>',
           '<div class="field-row">',
             '<div class="field"><label>ราคาหลอดเดิม/หลอด <span class="hint">บาท</span></label><input type="number" id="l-old-price" value="120" min="0"/></div>',
-            '<div class="field"><label>อายุการใช้งานหลอดเดิม <span class="hint">ชั่วโมง</span></label><input type="number" id="l-old-life" value="10000" min="1"/></div>',
+            '<div class="field"><label>อายุการใช้งานหลอดเดิม <span class="hint">ชั่วโมง</span></label><input type="number" id="l-old-life" value="10000" min="500" step="500"/></div>',
           '</div>',
           '<div class="field-row">',
             '<div class="field"><label>ราคาหลอด LED ใหม่/หลอด <span class="hint">บาท</span></label><input type="number" id="l-new-price" value="150" min="0"/></div>',
-            '<div class="field"><label>อายุการใช้งานหลอด LED <span class="hint">ชั่วโมง</span></label><input type="number" id="l-new-life" value="30000" min="1"/></div>',
+            '<div class="field"><label>อายุการใช้งานหลอด LED <span class="hint">ชั่วโมง</span></label><input type="number" id="l-new-life" value="30000" min="500" step="500"/></div>',
           '</div>',
-          '<span class="note">ค่าเริ่มต้นอ้างอิงหลอดฟลูออเรสเซนต์ทั่วไป (~10,000 ชม.) เทียบหลอด LED (~30,000 ชม.) — ปรับตามสเปกหลอดจริงได้</span>',
+          '<span class="note">ค่าเริ่มต้นอ้างอิงหลอดฟลูออเรสเซนต์ทั่วไป (~10,000 ชม.) เทียบหลอด LED (~30,000 ชม.) — ปรับตามสเปกหลอดจริงได้ ค่าที่ต่ำผิดปกติ (เช่น ต่ำกว่า 1,000 ชม.) จะทำให้ระบบคิดว่าต้องเปลี่ยนหลอดบ่อยเกินจริง ยอดประหยัดจะพุ่งสูงผิดปกติ</span>',
+          '<span class="note" id="l-life-warning" style="display:none;color:var(--rust);"></span>',
         '</div>',
         '<div class="sub-preview" id="l-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
@@ -1274,12 +1275,14 @@
 
     // ค่าเปลี่ยนหลอดเฉลี่ยต่อปี = จำนวนครั้งที่ต้องเปลี่ยนต่อปี (ตามชั่วโมงใช้งานจริง หารด้วยอายุใช้งานหลอด) × จำนวนหลอด × ราคา/หลอด
     const annualHours = hours*365;
-    const oldReplacementCostYear = (annualHours/oldLife)*count*oldPrice;
-    const newReplacementCostYear = (annualHours/newLife)*count*newPrice;
+    const oldReplacementsPerYear = annualHours/oldLife;
+    const newReplacementsPerYear = annualHours/newLife;
+    const oldReplacementCostYear = oldReplacementsPerYear*count*oldPrice;
+    const newReplacementCostYear = newReplacementsPerYear*count*newPrice;
     const replacementSavingsMonth = (oldReplacementCostYear-newReplacementCostYear)/12;
 
     const monthlySavings = elecSavingsMonth + replacementSavingsMonth;
-    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth };
+    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear };
   }
 
   function updateLedPreview(){
@@ -1290,6 +1293,19 @@
       '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>'
     ];
     document.getElementById('l-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
+
+    const warnEl = document.getElementById('l-life-warning');
+    if(warnEl){
+      if(r.oldReplacementsPerYear>2 || r.newReplacementsPerYear>2){
+        warnEl.style.display = 'block';
+        const parts = [];
+        if(r.oldReplacementsPerYear>2) parts.push('หลอดเดิมต้องเปลี่ยน ~'+r.oldReplacementsPerYear.toFixed(1)+' ครั้ง/ปี');
+        if(r.newReplacementsPerYear>2) parts.push('หลอด LED ต้องเปลี่ยน ~'+r.newReplacementsPerYear.toFixed(1)+' ครั้ง/ปี');
+        warnEl.textContent = '⚠ '+parts.join(' และ ')+' — อายุการใช้งานที่กรอกไว้สั้นผิดปกติ (น้อยกว่า 6 เดือนต่อการเปลี่ยนหนึ่งครั้ง) ทำให้ยอดประหยัดพุ่งสูงเกินจริง ลองตรวจสอบตัวเลขอายุหลอดอีกครั้ง';
+      } else {
+        warnEl.style.display = 'none';
+      }
+    }
   }
 
   function computeOtherDetail(){
