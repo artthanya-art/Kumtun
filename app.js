@@ -397,6 +397,7 @@
     const isVehicle = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid' || EQUIPMENT[key].subcalc==='waterrecycle');
     const isAutoCost = isVehicle || EQUIPMENT[key].subcalc==='led'; // แท็บที่คำนวณ "เงินลงทุนเริ่มต้น" ให้อัตโนมัติจากข้อมูลในแท็บเอง
     const isCarWithHoldYears = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid');
+    const isLifespanAutoComputed = isCarWithHoldYears || EQUIPMENT[key].subcalc==='led'; // แท็บที่คำนวณ "อายุการใช้งานอุปกรณ์" อัตโนมัติจากข้อมูลในแท็บเอง
     const noSalvage = ['led','insulation','water'].includes(key); // อุปกรณ์ที่ไม่มีตลาดขายซากจริง (เช็คจากรหัสแท็บ ไม่ใช่ subcalc type เพราะบางแท็บใช้ type ร่วมกัน)
     document.getElementById('f-cost').value = d.cost;
     document.getElementById('f-subsidy').value = d.subsidy;
@@ -410,11 +411,14 @@
     document.getElementById('f-salvage').readOnly = isVehicle || noSalvage;
     document.getElementById('f-cost').classList.toggle('auto-filled', isAutoCost);
     document.getElementById('f-salvage').classList.toggle('auto-filled', isVehicle || noSalvage);
-    document.getElementById('f-lifespan').readOnly = isCarWithHoldYears;
+    document.getElementById('f-lifespan').readOnly = isLifespanAutoComputed;
     document.getElementById('f-sell-year').readOnly = isCarWithHoldYears;
-    document.getElementById('f-lifespan').classList.toggle('auto-filled', isCarWithHoldYears);
+    document.getElementById('f-lifespan').classList.toggle('auto-filled', isLifespanAutoComputed);
     document.getElementById('f-sell-year').classList.toggle('auto-filled', isCarWithHoldYears);
-    document.getElementById('f-lifespan-note').style.display = isCarWithHoldYears ? 'block' : 'none';
+    document.getElementById('f-lifespan-note').style.display = isLifespanAutoComputed ? 'block' : 'none';
+    document.getElementById('f-lifespan-note').textContent = (EQUIPMENT[key].subcalc==='led')
+      ? 'คำนวณอัตโนมัติจาก “อายุการใช้งานหลอด LED (ชั่วโมง) ÷ ชั่วโมงใช้งานต่อวัน ÷ 365” ในแท็บด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)'
+      : 'ในแท็บรถยนต์ ค่านี้คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย เพราะขายรถไปแล้วเทียบต่อไม่ได้ (แก้ไขตัวเลขต้นทางด้านบนแทน)';
     document.getElementById('f-sell-year-note').textContent = isCarWithHoldYears
       ? 'คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)'
       : 'ถ้าขายก่อนครบอายุใช้งาน ระบบจะหยุดนับเงินประหยัดหลังปีนี้ และรับมูลค่าซากเป็นเงินก้อนในปีนี้แทน ค่าเริ่มต้น = อายุการใช้งานอุปกรณ์';
@@ -987,9 +991,16 @@
         '<div class="sub-preview" id="l-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
       document.getElementById('l-old-status').addEventListener('change', ()=>{ updateLedPreview(); calculate(); });
-      ['l-count','l-old-watt','l-new-watt','l-hours','l-old-price','l-old-life','l-new-price','l-new-life','l-install-cost','l-labor-cost'].forEach(id=>{
+      ['l-count','l-old-watt','l-new-watt','l-old-price','l-old-life','l-new-price','l-install-cost','l-labor-cost'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateLedPreview(); calculate(); });
       });
+      ['l-new-life','l-hours'].forEach(id=>{
+        document.getElementById(id).addEventListener('input', ()=>{
+          syncLedLifespan();
+          updateLedPreview(); calculate();
+        });
+      });
+      syncLedLifespan();
       updateLedPreview();
     }
 
@@ -1415,6 +1426,15 @@
     document.getElementById('f-sell-year').value = years;
     // หมายเหตุ: ในแท็บรถยนต์ ราคาขายที่กรอกไว้คือมูลค่า ณ ปีที่ขายเท่านั้น เกินกว่านั้นไม่มีความหมาย (ขายไปแล้วเทียบต่อไม่ได้)
     // จึง sync อายุการใช้งานอุปกรณ์ให้เท่ากับปีที่จะขายเสมอ ต่างจากอุปกรณ์ทั่วไปที่อายุใช้งานกับปีที่ขายเป็นคนละเรื่องกันได้
+  }
+
+  // คำนวณ "อายุการใช้งานอุปกรณ์" (ปี) จากอายุหลอด LED (ชั่วโมง) หารด้วยชั่วโมงใช้งานจริงต่อปี
+  // แล้ว sync ล็อกเข้ากับช่องกลาง เพื่อให้ระยะเวลาวิเคราะห์ทั้งโครงการตรงกับอายุใช้งานจริงของหลอดที่ติดตั้ง
+  function syncLedLifespan(){
+    const newLife = parseFloat(document.getElementById('l-new-life').value)||1;
+    const hours = parseFloat(document.getElementById('l-hours').value)||1;
+    const years = Math.max(newLife/(hours*365), 0.5);
+    document.getElementById('f-lifespan').value = Math.round(years*10)/10;
   }
 
   function computeBevDetail(){
