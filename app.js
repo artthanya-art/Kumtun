@@ -957,10 +957,14 @@
         '<div class="field-row single">',
           '<div class="field"><label>สถานะหลอดเดิม</label>',
           '<select id="l-old-status">',
-            '<option value="working">ยังใช้งานได้ดี — เปลี่ยนก่อนกำหนดเพื่อประหยัดไฟ (คิดเงินลงทุนเต็มราคาหลอด LED)</option>',
+            '<option value="working">ยังใช้งานได้ดี — เปลี่ยนก่อนกำหนดเพื่อประหยัดไฟ</option>',
             '<option value="expiring">ใกล้หมดอายุแล้ว — ต้องเปลี่ยนอยู่ดีไม่ว่าจะเปลี่ยนเป็น LED หรือไม่ (คิดแค่ส่วนต่างราคา LED ลบราคาหลอดเดิม)</option>',
           '</select>',
           '<span class="note">ถ้าหลอดเดิมใกล้หมดอายุอยู่แล้ว ต่อให้ไม่เปลี่ยนเป็น LED ก็ต้องซื้อหลอดใหม่มาเปลี่ยนอยู่ดี เงินลงทุนที่แท้จริงของการเลือก LED จึงเป็นแค่ส่วนต่างราคา ไม่ใช่ราคาเต็ม</span></div>',
+        '</div>',
+        '<div class="field-row single" id="l-remaining-life-wrap">',
+          '<div class="field"><label>อายุคงเหลือของหลอดเดิม (โดยประมาณ) <span class="hint">ชั่วโมง</span></label><input type="number" id="l-remaining-life" value="10000" min="0"/>',
+          '<span class="note">ถ้าหลอดเดิมยังใช้งานได้ดีและถูกถอดทิ้งก่อนหมดอายุ ถือว่าเสียมูลค่าที่ยังเหลืออยู่ไปเปล่าๆ ส่วนนี้จะถูกนับเป็นต้นทุนเพิ่มของการเปลี่ยนก่อนกำหนด (ยิ่งเหลืออายุเยอะ ยิ่งเสียดายมาก) ใส่ 0 ถ้าไม่ทราบหรือไม่ต้องการคิดส่วนนี้</span></div>',
         '</div>',
         '<div class="field-row">',
           '<div class="field"><label>กำลังไฟหลอดเดิม <span class="hint">วัตต์/หลอด</span></label><input type="number" id="l-old-watt" value="36" min="0"/></div>',
@@ -989,8 +993,13 @@
         '</div>',
         '<div class="sub-preview" id="l-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
-      document.getElementById('l-old-status').addEventListener('change', ()=>{ updateLedPreview(); calculate(); });
-      ['l-count','l-old-watt','l-new-watt','l-old-price','l-old-life','l-new-price','l-install-cost','l-labor-cost'].forEach(id=>{
+      document.getElementById('l-old-status').addEventListener('change', function(){
+        document.getElementById('l-remaining-life-wrap').style.display = this.value==='working' ? 'block' : 'none';
+        updateLedPreview(); calculate();
+      });
+      document.getElementById('l-remaining-life-wrap').style.display =
+        document.getElementById('l-old-status').value==='working' ? 'block' : 'none';
+      ['l-count','l-old-watt','l-new-watt','l-old-price','l-old-life','l-new-price','l-install-cost','l-labor-cost','l-remaining-life'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateLedPreview(); calculate(); });
       });
       ['l-new-life','l-hours'].forEach(id=>{
@@ -1319,9 +1328,16 @@
     const oldStatus = document.getElementById('l-old-status').value;
     // ถ้าหลอดเดิมใกล้หมดอายุอยู่แล้ว ต้องซื้อหลอดใหม่มาเปลี่ยนอยู่ดีไม่ว่าจะเลือก LED หรือไม่ เงินลงทุนที่แท้จริงของ LED
     // จึงเป็นแค่ "ส่วนต่างราคา" ไม่ใช่ราคาเต็ม — ถ้ายังใช้งานได้ดีอยู่ (เปลี่ยนก่อนกำหนด) ถึงจะคิดราคาเต็ม
-    const bulbCost = (oldStatus==='expiring') ? (newPrice-oldPrice)*count : count*newPrice;
+    // บวกมูลค่าที่เสียไปเปล่าๆ จากการทิ้งหลอดเดิมที่ยังมีอายุคงเหลืออยู่ (สัดส่วนอายุคงเหลือ × ราคาหลอดเดิม)
+    let wastedValue = 0;
+    if(oldStatus==='working'){
+      const remainingLife = parseFloat(document.getElementById('l-remaining-life').value)||0;
+      const remainingFraction = oldLife>0 ? Math.min(Math.max(remainingLife/oldLife,0),1) : 0;
+      wastedValue = remainingFraction*oldPrice*count;
+    }
+    const bulbCost = (oldStatus==='expiring') ? (newPrice-oldPrice)*count : count*newPrice + wastedValue;
     const investmentTotal = bulbCost + installCost;
-    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear, investmentTotal, oldStatus, materialSavingsYear, laborSavingsYear, laborCost };
+    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear, investmentTotal, oldStatus, materialSavingsYear, laborSavingsYear, laborCost, wastedValue };
   }
 
   function updateLedPreview(){
@@ -1330,13 +1346,16 @@
     if(costEl) costEl.value = Math.round(r.investmentTotal);
     const investLabel = r.oldStatus==='expiring'
       ? 'เงินลงทุนเริ่มต้นที่คำนวณให้ (คิดเฉพาะส่วนต่างราคา เพราะหลอดเดิมต้องเปลี่ยนอยู่ดี): '
-      : 'เงินลงทุนเริ่มต้นที่คำนวณให้ (ราคาเต็มหลอด LED): ';
+      : 'เงินลงทุนเริ่มต้นที่คำนวณให้ (ราคาเต็มหลอด LED'+(r.wastedValue>0?' + มูลค่าหลอดเดิมที่เสียไป':'')+'): ';
     const rows = [
       'ลดการใช้ไฟ ~'+r.monthlyKwh.toFixed(1)+' หน่วย/เดือน (ประหยัด '+fmt0(r.elecSavingsMonth)+' บาท/เดือน)',
       'ค่าซื้อหลอดทดแทนตลอดปี (รวมค่าแรงถ้ามี) — หลอดเดิม ~'+fmt0(r.oldReplacementCostYear)+' บาท/ปี · หลอด LED ~'+fmt0(r.newReplacementCostYear)+' บาท/ปี',
     ];
     if(r.laborCost>0){
       rows.push('แยกเฉพาะส่วนค่าแรง: ประหยัดได้ ~'+fmt0(r.laborSavingsYear)+' บาท/ปี (จากค่าหลอดล้วนๆ ประหยัดอีก ~'+fmt0(r.materialSavingsYear)+' บาท/ปี)');
+    }
+    if(r.wastedValue>0){
+      rows.push('มูลค่าหลอดเดิมที่ยังเหลืออยู่แต่ต้องทิ้งไปเปล่าๆ: ~'+fmt0(r.wastedValue)+' บาท (นับเป็นต้นทุนเพิ่มของการเปลี่ยนก่อนกำหนด)');
     }
     rows.push(
       '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>',
