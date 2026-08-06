@@ -395,6 +395,7 @@
     document.getElementById('active-equipment-desc').textContent = EQUIPMENT[key].desc;
     const d = EQUIPMENT[key].defaults;
     const isVehicle = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid' || EQUIPMENT[key].subcalc==='waterrecycle');
+    const isAutoCost = isVehicle || EQUIPMENT[key].subcalc==='led'; // แท็บที่คำนวณ "เงินลงทุนเริ่มต้น" ให้อัตโนมัติจากข้อมูลในแท็บเอง
     const isCarWithHoldYears = (EQUIPMENT[key].subcalc==='bev' || EQUIPMENT[key].subcalc==='hybrid');
     const noSalvage = ['led','insulation','water'].includes(key); // อุปกรณ์ที่ไม่มีตลาดขายซากจริง (เช็คจากรหัสแท็บ ไม่ใช่ subcalc type เพราะบางแท็บใช้ type ร่วมกัน)
     document.getElementById('f-cost').value = d.cost;
@@ -405,9 +406,9 @@
     document.getElementById('f-other-cost').value = 0;
     document.getElementById('f-degradation').value = d.degradation;
     document.getElementById('f-salvage').value = noSalvage ? 0 : d.salvage;
-    document.getElementById('f-cost').readOnly = isVehicle;
+    document.getElementById('f-cost').readOnly = isAutoCost;
     document.getElementById('f-salvage').readOnly = isVehicle || noSalvage;
-    document.getElementById('f-cost').classList.toggle('auto-filled', isVehicle);
+    document.getElementById('f-cost').classList.toggle('auto-filled', isAutoCost);
     document.getElementById('f-salvage').classList.toggle('auto-filled', isVehicle || noSalvage);
     document.getElementById('f-lifespan').readOnly = isCarWithHoldYears;
     document.getElementById('f-sell-year').readOnly = isCarWithHoldYears;
@@ -417,7 +418,7 @@
     document.getElementById('f-sell-year-note').textContent = isCarWithHoldYears
       ? 'คำนวณอัตโนมัติจาก “จำนวนปีที่จะใช้รถ” ด้านซ้าย (แก้ไขตัวเลขต้นทางด้านบนแทน)'
       : 'ถ้าขายก่อนครบอายุใช้งาน ระบบจะหยุดนับเงินประหยัดหลังปีนี้ และรับมูลค่าซากเป็นเงินก้อนในปีนี้แทน ค่าเริ่มต้น = อายุการใช้งานอุปกรณ์';
-    document.getElementById('f-cost-note').style.display = isVehicle ? 'block' : 'none';
+    document.getElementById('f-cost-note').style.display = isAutoCost ? 'block' : 'none';
     document.getElementById('f-salvage-note').style.display = (isVehicle || noSalvage) ? 'block' : 'none';
     document.getElementById('f-salvage-note').textContent = noSalvage
       ? 'อุปกรณ์ประเภทนี้ไม่มีตลาดขายซาก ระบบล็อกไว้ที่ 0 อัตโนมัติ'
@@ -945,7 +946,7 @@
     if(type==='led'){
       panel.innerHTML = [
         '<h2>ไฟ LED ทั้งอาคาร</h2>',
-        '<p class="desc">กรอกจำนวนหลอด กำลังไฟ ราคา และอายุการใช้งานของหลอดเดิมเทียบกับหลอด LED ใหม่ เพื่อคำนวณทั้งค่าไฟที่ประหยัดได้ และค่าเปลี่ยนหลอดที่ประหยัดได้จากอายุการใช้งานที่ต่างกัน</p>',
+        '<p class="desc">กรอกจำนวนหลอด กำลังไฟ ราคา และอายุการใช้งานของหลอดเดิมเทียบกับหลอด LED ใหม่ ระบบจะคำนวณ “เงินลงทุนเริ่มต้น” ในหัวข้อด้านล่างให้อัตโนมัติจากจำนวนหลอด × ราคาหลอด LED (บวกค่าติดตั้งถ้ามี) พร้อมทั้งค่าไฟและค่าเปลี่ยนหลอดที่ประหยัดได้</p>',
         '<div class="field-row single">',
           '<div class="field"><label>จำนวนหลอด/โคมที่จะเปลี่ยน <span class="hint">หลอด</span></label><input type="number" id="l-count" value="20" min="0"/></div>',
         '</div>',
@@ -969,9 +970,13 @@
           '<span class="note">ค่าเริ่มต้นอ้างอิงหลอดฟลูออเรสเซนต์ทั่วไป (~10,000 ชม.) เทียบหลอด LED (~30,000 ชม.) — ปรับตามสเปกหลอดจริงได้ ค่าที่ต่ำผิดปกติ (เช่น ต่ำกว่า 1,000 ชม.) จะทำให้ระบบคิดว่าต้องเปลี่ยนหลอดบ่อยเกินจริง ยอดประหยัดจะพุ่งสูงผิดปกติ</span>',
           '<span class="note" id="l-life-warning" style="display:none;color:var(--rust);"></span>',
         '</div>',
+        '<div class="field-row single">',
+          '<div class="field"><label>ค่าติดตั้ง/ค่าแรงเพิ่มเติม (ถ้ามี) <span class="hint">บาท</span></label><input type="number" id="l-install-cost" value="0" min="0"/>',
+          '<span class="note">นอกเหนือจากค่าหลอด เช่น ค่าช่าง ค่าอุปกรณ์ติดตั้งเพิ่มเติม</span></div>',
+        '</div>',
         '<div class="sub-preview" id="l-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
-      ['l-count','l-old-watt','l-new-watt','l-hours','l-old-price','l-old-life','l-new-price','l-new-life'].forEach(id=>{
+      ['l-count','l-old-watt','l-new-watt','l-hours','l-old-price','l-old-life','l-new-price','l-new-life','l-install-cost'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateLedPreview(); calculate(); });
       });
       updateLedPreview();
@@ -1282,15 +1287,20 @@
     const replacementSavingsMonth = (oldReplacementCostYear-newReplacementCostYear)/12;
 
     const monthlySavings = elecSavingsMonth + replacementSavingsMonth;
-    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear };
+    const installCost = parseFloat(document.getElementById('l-install-cost').value)||0;
+    const investmentTotal = count*newPrice + installCost;
+    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear, investmentTotal };
   }
 
   function updateLedPreview(){
     const r = computeLedDetail();
+    const costEl = document.getElementById('f-cost');
+    if(costEl) costEl.value = Math.round(r.investmentTotal);
     const rows = [
       'ลดการใช้ไฟ ~'+r.monthlyKwh.toFixed(1)+' หน่วย/เดือน (ประหยัด '+fmt0(r.elecSavingsMonth)+' บาท/เดือน)',
       'ค่าเปลี่ยนหลอดเดิมโดยประมาณ ~'+fmt0(r.oldReplacementCostYear)+' บาท/ปี · หลอด LED ~'+fmt0(r.newReplacementCostYear)+' บาท/ปี',
-      '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>'
+      '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>',
+      'เงินลงทุนเริ่มต้นที่คำนวณให้: '+fmt0(r.investmentTotal)+' บาท'
     ];
     document.getElementById('l-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
 
