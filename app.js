@@ -979,7 +979,6 @@
             '<div class="field"><label>ราคาหลอด LED ใหม่/หลอด <span class="hint">บาท</span></label><input type="number" id="l-new-price" value="150" min="0"/></div>',
             '<div class="field"><label>อายุการใช้งานหลอด LED <span class="hint">ชั่วโมง</span></label><input type="number" id="l-new-life" value="30000" min="500" step="500"/></div>',
           '</div>',
-          '<span class="note">ค่าเริ่มต้นอ้างอิงหลอดฟลูออเรสเซนต์ทั่วไป (~10,000 ชม.) เทียบหลอด LED (~30,000 ชม.) — ปรับตามสเปกหลอดจริงได้ ค่าที่ต่ำผิดปกติ (เช่น ต่ำกว่า 1,000 ชม.) จะทำให้ระบบคิดว่าต้องเปลี่ยนหลอดบ่อยเกินจริง ยอดประหยัดจะพุ่งสูงผิดปกติ</span>',
           '<span class="note" id="l-life-warning" style="display:none;color:var(--rust);"></span>',
         '</div>',
         '<div class="field-row">',
