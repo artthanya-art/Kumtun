@@ -1321,9 +1321,15 @@
     const newReplacementCostYear = newMaterialCostYear + newLaborCostYear;
     const materialSavingsYear = oldMaterialCostYear - newMaterialCostYear;
     const laborSavingsYear = oldLaborCostYear - newLaborCostYear;
-    const replacementSavingsMonth = (oldReplacementCostYear-newReplacementCostYear)/12;
+    // ช่วงเวลาระหว่างรอบเปลี่ยนหลอดแต่ละแบบ (ปี) — ใช้สร้างเหตุการณ์เปลี่ยนหลอดแบบไม่ต่อเนื่อง แทนการเฉลี่ยเป็นรายเดือน
+    // เพราะถ้าหลอดยังใหม่ ก็ยังไม่ต้องซื้อหลอดใดๆ เลยจนกว่าจะถึงรอบเปลี่ยนจริง ไม่ใช่ประหยัดสม่ำเสมอทุกเดือนตั้งแต่ปีแรก
+    const oldIntervalYears = oldLife/annualHours;
+    const newIntervalYears = newLife/annualHours;
+    const oldEventCost = count*(oldPrice+laborCost);
+    const newEventCost = count*(newPrice+laborCost);
 
-    const monthlySavings = elecSavingsMonth + replacementSavingsMonth;
+    // monthlySavings (ที่ใช้เป็นฐานคำนวณสม่ำเสมอรายเดือน) นับแค่ค่าไฟที่ประหยัดได้ — ค่าเปลี่ยนหลอดจะถูกนับเป็นเหตุการณ์เฉพาะปีแทน (ดู getLedReplacementEvents)
+    const monthlySavings = elecSavingsMonth;
     const installCost = parseFloat(document.getElementById('l-install-cost').value)||0;
     const oldStatus = document.getElementById('l-old-status').value;
     // ถ้าหลอดเดิมใกล้หมดอายุอยู่แล้ว ต้องซื้อหลอดใหม่มาเปลี่ยนอยู่ดีไม่ว่าจะเลือก LED หรือไม่ เงินลงทุนที่แท้จริงของ LED
@@ -1337,7 +1343,28 @@
     }
     const bulbCost = (oldStatus==='expiring') ? (newPrice-oldPrice)*count : count*newPrice + wastedValue;
     const investmentTotal = bulbCost + installCost;
-    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear, investmentTotal, oldStatus, materialSavingsYear, laborSavingsYear, laborCost, wastedValue };
+    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear,
+      oldReplacementsPerYear, newReplacementsPerYear, investmentTotal, oldStatus, materialSavingsYear, laborSavingsYear, laborCost, wastedValue,
+      oldIntervalYears, newIntervalYears, oldEventCost, newEventCost };
+  }
+
+  // สร้างรายการเหตุการณ์เปลี่ยนหลอดแบบไม่ต่อเนื่อง (ปีที่ต้องซื้อจริง) จากช่วงเวลาระหว่างรอบเปลี่ยนของแต่ละแบบ
+  // คืนค่า: avoided = ปีที่จะประหยัดได้ (ไม่ต้องซื้อหลอดเดิมเพราะเปลี่ยนเป็น LED แล้ว), replace = ปีที่ต้องซื้อหลอด LED จริง
+  function getLedReplacementEvents(maxYears){
+    const r = computeLedDetail();
+    const avoided = [];
+    const replace = [];
+    if(r.oldIntervalYears>0 && r.oldEventCost>0){
+      for(let k=1; Math.round(r.oldIntervalYears*k)<=maxYears; k++){
+        avoided.push({ year: Math.max(Math.round(r.oldIntervalYears*k),1), amount: r.oldEventCost });
+      }
+    }
+    if(r.newIntervalYears>0 && r.newEventCost>0){
+      for(let k=1; Math.round(r.newIntervalYears*k)<=maxYears; k++){
+        replace.push({ year: Math.max(Math.round(r.newIntervalYears*k),1), amount: r.newEventCost });
+      }
+    }
+    return { avoided, replace };
   }
 
   function updateLedPreview(){
@@ -1348,19 +1375,18 @@
       ? 'เงินลงทุนเริ่มต้นที่คำนวณให้ (คิดเฉพาะส่วนต่างราคา เพราะหลอดเดิมต้องเปลี่ยนอยู่ดี): '
       : 'เงินลงทุนเริ่มต้นที่คำนวณให้ (ราคาเต็มหลอด LED'+(r.wastedValue>0?' + มูลค่าหลอดเดิมที่เสียไป':'')+'): ';
     const rows = [
-      'ลดการใช้ไฟ ~'+r.monthlyKwh.toFixed(1)+' หน่วย/เดือน (ประหยัด '+fmt0(r.elecSavingsMonth)+' บาท/เดือน)',
-      'ค่าซื้อหลอดทดแทนตลอดปี (รวมค่าแรงถ้ามี) — หลอดเดิม ~'+fmt0(r.oldReplacementCostYear)+' บาท/ปี · หลอด LED ~'+fmt0(r.newReplacementCostYear)+' บาท/ปี',
+      '<b>ค่าไฟที่ประหยัดได้: '+fmt0(r.elecSavingsMonth)+' บาท/เดือน</b> (ลดลง ~'+r.monthlyKwh.toFixed(1)+' หน่วย/เดือน) — ประหยัดสม่ำเสมอทุกเดือนตั้งแต่ปีแรก',
+      'ค่าซื้อหลอดทดแทน — หลอดเดิมทุก ~'+r.oldIntervalYears.toFixed(1)+' ปี (~'+fmt0(r.oldEventCost)+' บาท/ครั้ง) · หลอด LED ทุก ~'+r.newIntervalYears.toFixed(1)+' ปี (~'+fmt0(r.newEventCost)+' บาท/ครั้ง)',
+      'ไม่ได้ประหยัดสม่ำเสมอทุกเดือน — จะเห็นผลเป็นก้อนเงินในปีที่ถึงรอบเปลี่ยนจริงเท่านั้น (ดูตารางกระแสเงินสดด้านขวา) ปีก่อนถึงรอบแรกจะยังไม่มีผลต่างจากค่าเปลี่ยนหลอดเลย',
     ];
     if(r.laborCost>0){
-      rows.push('แยกเฉพาะส่วนค่าแรง: ประหยัดได้ ~'+fmt0(r.laborSavingsYear)+' บาท/ปี (จากค่าหลอดล้วนๆ ประหยัดอีก ~'+fmt0(r.materialSavingsYear)+' บาท/ปี)');
+      const count = parseFloat(document.getElementById('l-count').value)||0;
+      rows.push('ในแต่ละครั้งที่เปลี่ยน มีค่าแรงรวม ~'+fmt0(r.laborCost*count)+' บาท (นับรวมอยู่ในยอดต่อครั้งด้านบนแล้ว)');
     }
     if(r.wastedValue>0){
       rows.push('มูลค่าหลอดเดิมที่ยังเหลืออยู่แต่ต้องทิ้งไปเปล่าๆ: ~'+fmt0(r.wastedValue)+' บาท (นับเป็นต้นทุนเพิ่มของการเปลี่ยนก่อนกำหนด)');
     }
-    rows.push(
-      '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>',
-      investLabel+fmt0(r.investmentTotal)+' บาท'
-    );
+    rows.push(investLabel+fmt0(r.investmentTotal)+' บาท');
     if(r.investmentTotal<=0){
       rows.push('<span style="color:var(--primary-dark);">หลอด LED ถูกกว่าหรือเท่ากับหลอดเดิมที่ต้องซื้ออยู่ดี จึงไม่มีเงินลงทุนส่วนเพิ่ม (ประหยัดตั้งแต่วันแรก)</span>');
     }
@@ -1939,6 +1965,14 @@
       vehicleRepairEvents = getEventsFromContainer('h-repair-rows');
     }
 
+    // เหตุการณ์เปลี่ยนหลอดแบบไม่ต่อเนื่อง (เฉพาะแท็บ LED) — ปีที่จะประหยัดได้จากไม่ต้องซื้อหลอดเดิม และปีที่ต้องซื้อหลอด LED จริง
+    let ledAvoidedEvents = [], ledReplaceEvents = [];
+    if(EQUIPMENT[activeTab].subcalc==='led'){
+      const ledEvents = getLedReplacementEvents(effectiveYears);
+      ledAvoidedEvents = ledEvents.avoided;
+      ledReplaceEvents = ledEvents.replace;
+    }
+
     const years=[], grossSavingsArr=[], maintArr=[], netCFArr=[], ownerCFArr=[];
     let cumUndiscounted = -netInvestment; // asset-level payback (ignores financing structure)
     let cumOwner = -upfrontOutflow;
@@ -1954,7 +1988,9 @@
       const special_t = annualSpecial0 * Math.pow(1-degradation,t-1);
       const capex_t = majorCapexEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
       const repairAvoided_t = vehicleRepairEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
-      let assetNet_t = savings_t - maint_t - otherCost_t - capex_t + repairAvoided_t;
+      const ledAvoided_t = ledAvoidedEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
+      const ledReplace_t = ledReplaceEvents.filter(e=>e.year===t).reduce((s,e)=>s+e.amount,0);
+      let assetNet_t = savings_t - maint_t - otherCost_t - capex_t + repairAvoided_t + ledAvoided_t - ledReplace_t;
       let ownerNet_t = assetNet_t - ((loanEnabled && t<=loanTerm) ? annualLoanPayment : 0);
       if(t===effectiveYears){
         const salvage = vehicleSalvageOverrideBaht!==null ? vehicleSalvageOverrideBaht : (cost*salvagePct/100);
@@ -1984,7 +2020,7 @@
 
       years.push(t);
       grossSavingsArr.push(savings_t);
-      maintArr.push(maint_t + otherCost_t + capex_t - repairAvoided_t + ((loanEnabled && t<=loanTerm)?annualLoanPayment:0));
+      maintArr.push(maint_t + otherCost_t + capex_t - repairAvoided_t + ledReplace_t - ledAvoided_t + ((loanEnabled && t<=loanTerm)?annualLoanPayment:0));
       netCFArr.push(ownerNet_t);
       ownerCFArr.push(cumOwner);
     }
