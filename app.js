@@ -1305,8 +1305,14 @@
     const annualHours = hours*365;
     const oldReplacementsPerYear = annualHours/oldLife;
     const newReplacementsPerYear = annualHours/newLife;
-    const oldReplacementCostYear = oldReplacementsPerYear*count*(oldPrice+laborCost);
-    const newReplacementCostYear = newReplacementsPerYear*count*(newPrice+laborCost);
+    const oldMaterialCostYear = oldReplacementsPerYear*count*oldPrice;
+    const newMaterialCostYear = newReplacementsPerYear*count*newPrice;
+    const oldLaborCostYear = oldReplacementsPerYear*count*laborCost;
+    const newLaborCostYear = newReplacementsPerYear*count*laborCost;
+    const oldReplacementCostYear = oldMaterialCostYear + oldLaborCostYear;
+    const newReplacementCostYear = newMaterialCostYear + newLaborCostYear;
+    const materialSavingsYear = oldMaterialCostYear - newMaterialCostYear;
+    const laborSavingsYear = oldLaborCostYear - newLaborCostYear;
     const replacementSavingsMonth = (oldReplacementCostYear-newReplacementCostYear)/12;
 
     const monthlySavings = elecSavingsMonth + replacementSavingsMonth;
@@ -1316,7 +1322,7 @@
     // จึงเป็นแค่ "ส่วนต่างราคา" ไม่ใช่ราคาเต็ม — ถ้ายังใช้งานได้ดีอยู่ (เปลี่ยนก่อนกำหนด) ถึงจะคิดราคาเต็ม
     const bulbCost = (oldStatus==='expiring') ? (newPrice-oldPrice)*count : count*newPrice;
     const investmentTotal = bulbCost + installCost;
-    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear, investmentTotal, oldStatus };
+    return { monthlySavings, monthlyKwh: kwhMonth, elecSavingsMonth, oldReplacementCostYear, newReplacementCostYear, replacementSavingsMonth, oldReplacementsPerYear, newReplacementsPerYear, investmentTotal, oldStatus, materialSavingsYear, laborSavingsYear, laborCost };
   }
 
   function updateLedPreview(){
@@ -1328,10 +1334,15 @@
       : 'เงินลงทุนเริ่มต้นที่คำนวณให้ (ราคาเต็มหลอด LED): ';
     const rows = [
       'ลดการใช้ไฟ ~'+r.monthlyKwh.toFixed(1)+' หน่วย/เดือน (ประหยัด '+fmt0(r.elecSavingsMonth)+' บาท/เดือน)',
-      'ค่าเปลี่ยนหลอดเดิมโดยประมาณ ~'+fmt0(r.oldReplacementCostYear)+' บาท/ปี · หลอด LED ~'+fmt0(r.newReplacementCostYear)+' บาท/ปี',
+      'ค่าซื้อหลอดทดแทนตลอดปี (รวมค่าแรงถ้ามี) — หลอดเดิม ~'+fmt0(r.oldReplacementCostYear)+' บาท/ปี · หลอด LED ~'+fmt0(r.newReplacementCostYear)+' บาท/ปี',
+    ];
+    if(r.laborCost>0){
+      rows.push('แยกเฉพาะส่วนค่าแรง: ประหยัดได้ ~'+fmt0(r.laborSavingsYear)+' บาท/ปี (จากค่าหลอดล้วนๆ ประหยัดอีก ~'+fmt0(r.materialSavingsYear)+' บาท/ปี)');
+    }
+    rows.push(
       '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>',
       investLabel+fmt0(r.investmentTotal)+' บาท'
-    ];
+    );
     if(r.investmentTotal<=0){
       rows.push('<span style="color:var(--primary-dark);">หลอด LED ถูกกว่าหรือเท่ากับหลอดเดิมที่ต้องซื้ออยู่ดี จึงไม่มีเงินลงทุนส่วนเพิ่ม (ประหยัดตั้งแต่วันแรก)</span>');
     }
