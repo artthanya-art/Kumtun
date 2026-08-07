@@ -356,10 +356,9 @@
       defaults:{cost:20000, subsidy:0, lifespan:8, maintenance:0, degradation:1, salvage:0}
     },
     insulation: {
-      label:'ฉนวนกันความร้อน', desc:'ฉนวนหลังคา/ผนัง ลดภาระเครื่องปรับอากาศ',
-      subcalc:'direct',
-      defaults:{cost:35000, subsidy:0, lifespan:20, maintenance:0, degradation:0.2, salvage:0,
-        savingsPlaceholder:'450', savingsNote:'ประมาณจากค่าไฟแอร์ที่ลดลงเมื่อบ้านเย็นขึ้น'}
+      label:'ฉนวนกันความร้อน', desc:'ฉนวนหลังคา/ฝ้าเพดาน ลดความร้อนที่ทะลุเข้าบ้าน ลดภาระเครื่องปรับอากาศ',
+      subcalc:'insulation',
+      defaults:{cost:35000, subsidy:0, lifespan:20, maintenance:0, degradation:0.2, salvage:0}
     },
     water: {
       label:'เครื่องกรองน้ำ', desc:'เทียบกับค่าน้ำดื่มบรรจุขวด/ถังที่ไม่ต้องซื้ออีกต่อไป',
@@ -1016,6 +1015,45 @@
       updateLedPreview();
     }
 
+    if(type==='insulation'){
+      panel.innerHTML = [
+        '<h2>ฉนวนกันความร้อน</h2>',
+        '<p class="desc">คำนวณจากปริมาณความร้อนที่ฉนวนบล็อกไว้ได้จริง (พื้นที่ × ส่วนต่างอุณหภูมิ ÷ ค่าความต้านทานความร้อน) แล้วแปลงเป็นไฟฟ้าที่แอร์ไม่ต้องทำงานหนัก ตามหลักการถ่ายเทความร้อน (Heat Transfer)</p>',
+        '<div class="ref-box">',
+          '<div class="ref-box-label">ส่วนที่ 1 — พื้นที่และอุณหภูมิ</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>พื้นที่หลังคา/ฝ้าเพดานที่จะติดฉนวน <span class="hint">ตร.ม.</span></label><input type="number" id="ins-area" value="100" min="0"/></div>',
+          '</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>อุณหภูมิใต้หลังคา (ก่อนติดฉนวน) <span class="hint">°C</span></label><input type="number" id="ins-attic-temp" value="45" step="0.5"/></div>',
+            '<div class="field"><label>อุณหภูมิห้องที่ต้องการ <span class="hint">°C</span></label><input type="number" id="ins-room-temp" value="25" step="0.5"/></div>',
+          '</div>',
+          '<span class="note" id="ins-deltat-note">ส่วนต่างอุณหภูมิ (ΔT) = —</span>',
+        '</div>',
+        '<div class="ref-box">',
+          '<div class="ref-box-label">ส่วนที่ 2 — ค่าความต้านทานความร้อนของหลังคา (R-value)</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ก่อนติดฉนวน <span class="hint">m²·K/W</span></label><input type="number" id="ins-r-old" value="0.3" min="0.01" step="0.05"/></div>',
+            '<div class="field"><label>หลังติดฉนวน <span class="hint">m²·K/W</span></label><input type="number" id="ins-r-new" value="2.0" min="0.01" step="0.1"/></div>',
+          '</div>',
+          '<span class="note">ยิ่ง R-value มาก ยิ่งกันความร้อนได้ดี — หลังคาเปลือย/ไม่มีฉนวนมักอยู่ที่ ~0.2-0.4 · ฉนวนใยแก้วหนา 3-6 นิ้วมักอยู่ที่ ~1.5-3.0 (ดูสเปกจากผู้ผลิตฉนวนที่จะใช้จริงเพื่อความแม่นยำ)</span>',
+        '</div>',
+        '<div class="ref-box">',
+          '<div class="ref-box-label">ส่วนที่ 3 — เครื่องปรับอากาศและการใช้งาน</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>ประสิทธิภาพแอร์ (COP) <span class="hint">—</span></label><input type="number" id="ins-cop" value="3" min="0.1" step="0.1"/></div>',
+            '<div class="field"><label>ชั่วโมงเปิดแอร์เฉลี่ย <span class="hint">ชม./วัน</span></label><input type="number" id="ins-hours" value="8" min="0" step="0.5"/></div>',
+          '</div>',
+          '<span class="note">COP (Coefficient of Performance) ของแอร์ทั่วไปอยู่ที่ ~2.5-3.5 ยิ่งค่าสูงยิ่งประหยัดไฟ ดูได้จากฉลากประหยัดไฟเบอร์ 5 ของแอร์ที่ใช้จริง</span>',
+        '</div>',
+        '<div class="sub-preview" id="ins-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
+      ].join('');
+      ['ins-area','ins-attic-temp','ins-room-temp','ins-r-old','ins-r-new','ins-cop','ins-hours'].forEach(id=>{
+        document.getElementById(id).addEventListener('input', ()=>{ updateInsulationPreview(); calculate(); });
+      });
+      updateInsulationPreview();
+    }
+
     if(type==='direct'){
       panel.innerHTML = [
         '<h2>'+EQUIPMENT[key].label+'</h2>',
@@ -1410,6 +1448,41 @@
     }
   }
 
+  // คำนวณฉนวนกันความร้อนตามหลักการถ่ายเทความร้อน: Q = A × ΔT ÷ R
+  // เปรียบเทียบ Q ก่อน/หลังติดฉนวน แล้วแปลงเป็นไฟฟ้าที่แอร์ประหยัดได้ผ่านค่า COP
+  function computeInsulationDetail(){
+    const area = parseFloat(document.getElementById('ins-area').value)||0;
+    const atticTemp = parseFloat(document.getElementById('ins-attic-temp').value)||0;
+    const roomTemp = parseFloat(document.getElementById('ins-room-temp').value)||0;
+    const rOld = Math.max(parseFloat(document.getElementById('ins-r-old').value)||0.01, 0.01);
+    const rNew = Math.max(parseFloat(document.getElementById('ins-r-new').value)||0.01, 0.01);
+    const cop = Math.max(parseFloat(document.getElementById('ins-cop').value)||0.1, 0.1);
+    const hours = parseFloat(document.getElementById('ins-hours').value)||0;
+    const rate = parseFloat(document.getElementById('f-elec-rate').value)||0;
+
+    const deltaT = Math.max(atticTemp-roomTemp, 0);
+    const qOldW = area*deltaT/rOld;   // วัตต์ ความร้อนที่ทะลุผ่านก่อนติดฉนวน
+    const qNewW = area*deltaT/rNew;   // วัตต์ ความร้อนที่ทะลุผ่านหลังติดฉนวน
+    const deltaQW = Math.max(qOldW-qNewW, 0); // วัตต์ ความร้อนที่บล็อกไว้ได้
+    const elecSavedW = deltaQW/cop;   // วัตต์ ไฟฟ้าที่แอร์ประหยัดได้
+    const kwhMonth = elecSavedW/1000*hours*30;
+    const monthlySavings = kwhMonth*rate;
+
+    return { deltaT, qOldW, qNewW, deltaQW, elecSavedW, kwhMonth, monthlySavings };
+  }
+
+  function updateInsulationPreview(){
+    const r = computeInsulationDetail();
+    document.getElementById('ins-deltat-note').textContent = 'ส่วนต่างอุณหภูมิ (ΔT) = '+r.deltaT.toFixed(1)+' °C';
+    const rows = [
+      'ความร้อนที่ทะลุผ่านก่อนติดฉนวน ~'+fmt0(r.qOldW)+' วัตต์ · หลังติดฉนวน ~'+fmt0(r.qNewW)+' วัตต์',
+      'ความร้อนที่บล็อกไว้ได้ ~'+fmt0(r.deltaQW)+' วัตต์ → แอร์ประหยัดไฟ ~'+fmt0(r.elecSavedW)+' วัตต์',
+      'ลดการใช้ไฟ ~'+r.kwhMonth.toFixed(1)+' หน่วย/เดือน',
+      '<b>ประหยัดรวม: '+fmt0(r.monthlySavings)+' บาท/เดือน</b>'
+    ];
+    document.getElementById('ins-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
+  }
+
   function computeOtherDetail(){
     const mode = document.getElementById('o-mode').value;
     const rate = parseFloat(document.getElementById('f-elec-rate').value)||0.0001;
@@ -1757,6 +1830,9 @@
     if(type==='led'){
       return computeLedDetail().monthlySavings;
     }
+    if(type==='insulation'){
+      return computeInsulationDetail().monthlySavings;
+    }
     if(type==='bev') return computeBevDetail().monthlySavings;
     if(type==='hybrid') return computeHybridDetail().monthlySavings;
     if(type==='water') return computeWaterDetail().monthlySavings;
@@ -1777,6 +1853,9 @@
     }
     if(type==='led'){
       return computeLedDetail().monthlyKwh*co2Factor;
+    }
+    if(type==='insulation'){
+      return computeInsulationDetail().kwhMonth*co2Factor;
     }
     if(type==='bev') return computeBevDetail().monthlyCo2Kg;
     if(type==='hybrid') return computeHybridDetail().monthlyCo2Kg;
