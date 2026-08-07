@@ -489,7 +489,7 @@
             '<button type="button" id="s-period-add" class="btn-add-period">+ เพิ่มช่วงเวลา</button>',
             '<span id="s-period-sum" class="note"></span>',
           '</div>',
-          '<span class="note">ระบุว่าโหลดไฟฟ้าในบ้านเกิดขึ้นช่วงไหนของวันกี่ % สัดส่วนรวมกันไม่ควรเกิน 100% ใช้รูปแบบเวลา 00:00–23:59 ระบบจะจับคู่กับช่วงที่มีแดด (06:00–18:00) และช่วง On-Peak (09:00–22:00) ให้อัตโนมัติ — ช่วงที่มีแดดแต่ไม่ได้ระบุโหลดไว้ ไฟที่ผลิตได้จะถือเป็นไฟส่วนเกินสำหรับชาร์จแบตเตอรี่หรือส่งออกเช่นกัน</span></div>',
+          '<span class="note">ระบุว่าโหลดไฟฟ้าในบ้านเกิดขึ้นช่วงไหนของวันกี่ % สัดส่วนรวมกันไม่ควรเกิน 100% ใช้รูปแบบเวลา 00:00–23:59 ระบบจะจับคู่กับช่วงที่ใช้ไฟตรงจากแผงได้ (09:00–17:00) และช่วง On-Peak (09:00–22:00) ให้อัตโนมัติ — ช่วงที่มีแดดแต่ไม่ได้ระบุโหลดไว้ ไฟที่ผลิตได้จะถือเป็นไฟส่วนเกินสำหรับชาร์จแบตเตอรี่หรือส่งออกเช่นกัน</span></div>',
         '</div>',
 
         '<div class="toggle-row"><input type="checkbox" id="s-battery-enabled"/><label for="s-battery-enabled">ติดตั้งแบตเตอรี่กักเก็บพลังงาน</label></div>',
@@ -1027,7 +1027,7 @@
   }
 
   /* ---------- Time-period helpers (replaces the old day/night preset) ---------- */
-  const SUN_WINDOW = [6, 18];     // ช่วงเวลาที่มีแดด (สมมติฐาน 06:00–18:00)
+  const SUN_WINDOW = [9, 17];     // ช่วงเวลาที่ใช้ไฟฟ้าตรงจากแผงโซลาร์ได้ (09:00–17:00)
   const ONPEAK_WINDOW = [9, 22];  // ช่วง On-Peak มาตรฐาน (09:00–22:00)
 
   function parseTimeStr(v){
@@ -1215,7 +1215,7 @@
     const offpeakRate = touEnabled ? (parseFloat(document.getElementById('s-tou-offpeak-rate').value)||flatRate) : flatRate;
 
     const dailyGen = size*sun;
-    const sunWindowLen = SUN_WINDOW[1]-SUN_WINDOW[0]; // 12 ชม.
+    const sunWindowLen = SUN_WINDOW[1]-SUN_WINDOW[0]; // 8 ชม.
     const genRatePerHour = sunWindowLen>0 ? dailyGen/sunWindowLen : 0; // สมมติผลิตไฟสม่ำเสมอตลอดช่วงที่มีแดด
 
     // กระจายพลังงานที่ผลิตได้ไปยังแต่ละช่วงเวลาตามจำนวนชั่วโมงที่ทับซ้อนกับช่วงมีแดด (ในอัตราคงที่ genRatePerHour)
