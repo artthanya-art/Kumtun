@@ -1026,7 +1026,7 @@
           '</div>',
           '<div class="field-row">',
             '<div class="field"><label>อุณหภูมิใต้หลังคา (ก่อนติดฉนวน) <span class="hint">°C</span></label><input type="number" id="ins-attic-temp" value="45" step="0.5"/></div>',
-            '<div class="field"><label>อุณหภูมิห้องที่ต้องการ <span class="hint">°C</span></label><input type="number" id="ins-room-temp" value="25" step="0.5"/></div>',
+            '<div class="field"><label>อุณหภูมิหลังติดฉนวน <span class="hint">°C</span></label><input type="number" id="ins-room-temp" value="25" step="0.5"/></div>',
           '</div>',
           '<span class="note" id="ins-deltat-note">ส่วนต่างอุณหภูมิ (ΔT) = —</span>',
         '</div>',
