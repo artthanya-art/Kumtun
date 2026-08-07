@@ -509,6 +509,14 @@
           '<div class="field-row single"><span class="note">On-Peak คือ 09:00–22:00 วันจันทร์–ศุกร์ นอกเวลานี้ถือเป็น Off-Peak — หากช่วงเวลาที่ระบุคาบเกี่ยวทั้งสองช่วง ระบบจะคำนวณอัตราถัวเฉลี่ยตามสัดส่วนชั่วโมงให้อัตโนมัติ</span></div>',
         '</div>',
 
+        '<div class="toggle-row"><input type="checkbox" id="s-sellback-enabled"/><label for="s-sellback-enabled">ขายไฟส่วนเกินคืนให้การไฟฟ้า</label></div>',
+        '<div id="s-sellback-fields" style="display:none;">',
+          '<div class="field-row single">',
+            '<div class="field"><label>ราคารับซื้อไฟคืน <span class="hint">บาท/หน่วย</span></label><input type="number" id="s-sellback-rate" value="2.2" min="0" step="0.01"/>',
+            '<span class="note">อัตรารับซื้อไฟฟ้าส่วนเกิน (Feed-in Tariff) จากภาครัฐ/การไฟฟ้า มักต่ำกว่าค่าไฟที่ซื้อปกติมาก ตรวจสอบอัตราล่าสุดจากผู้ให้บริการก่อนใส่ — คำนวณจากไฟส่วนเกินที่เหลือหลังชาร์จแบตเตอรี่เต็มแล้ว (ถ้ามี)</span></div>',
+          '</div>',
+        '</div>',
+
         '<div class="sub-preview" id="s-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
 
@@ -520,12 +528,16 @@
         document.getElementById('s-tou-fields').style.display = this.checked ? 'block' : 'none';
         updateSolarPreview(); calculate();
       });
+      document.getElementById('s-sellback-enabled').addEventListener('change', function(){
+        document.getElementById('s-sellback-fields').style.display = this.checked ? 'block' : 'none';
+        updateSolarPreview(); calculate();
+      });
       document.getElementById('s-period-add').addEventListener('click', function(){
         document.getElementById('s-periods').appendChild(createPeriodRow('12:00','13:00',0));
         updatePeriodSum(); updateSolarPreview(); calculate();
       });
       initPeriods(document.getElementById('s-periods'));
-      ['s-size','s-sun','s-bill','s-load','s-battery-capacity','s-battery-efficiency','s-tou-peak-rate','s-tou-offpeak-rate'].forEach(id=>{
+      ['s-size','s-sun','s-bill','s-load','s-battery-capacity','s-battery-efficiency','s-tou-peak-rate','s-tou-offpeak-rate','s-sellback-rate'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateSolarPreview(); calculate(); });
       });
       updateSolarPreview();
@@ -1303,13 +1315,21 @@
     let monthlySavings = dailySavingsBaht*30;
     if(bill>0 && monthlySavings>bill) monthlySavings = bill;
 
+    // รายได้จากขายไฟส่วนเกินคืน — คิดจากไฟที่เหลือหลังชาร์จแบตเตอรี่เต็มแล้ว (ถ้ามี) ไม่ถูกจำกัดโดยเพดานบิลค่าไฟ เพราะเป็นรายได้ใหม่ ไม่ใช่แค่ส่วนที่ประหยัดจากบิลเดิม
+    const sellbackEnabled = document.getElementById('s-sellback-enabled').checked;
+    const sellbackRate = parseFloat(document.getElementById('s-sellback-rate').value)||0;
+    const monthlyExportKwh = (totalExcess-batteryCharge)*30;
+    const sellbackRevenue = sellbackEnabled ? monthlyExportKwh*sellbackRate : 0;
+    monthlySavings += sellbackRevenue;
+
     return {
       monthlyGenKwh: dailyGen*30,
       monthlyKwhSaved: dailyKwhSaved*30,
       monthlySavings,
       monthlySelfConsumption: selfCTotal*30,
       monthlyBatteryServed: batteryServedTotal*30,
-      monthlyExport: (totalExcess-batteryCharge)*30,
+      monthlyExport: monthlyExportKwh,
+      sellbackEnabled, sellbackRevenue,
       batteryEnabled, touEnabled,
       hasPeriods: periods.length>0
     };
@@ -1329,7 +1349,11 @@
       rows.push('แบตเตอรี่จ่ายไฟในช่วงที่ขาดแคลน ~'+Math.round(r.monthlyBatteryServed).toLocaleString('th-TH')+' หน่วย/เดือน');
     }
     if(r.monthlyExport>0.5){
-      rows.push('เหลือใช้ไม่หมด/ไม่ได้คิดมูลค่า ~'+Math.round(r.monthlyExport).toLocaleString('th-TH')+' หน่วย/เดือน');
+      if(r.sellbackEnabled){
+        rows.push('ขายไฟส่วนเกินคืน ~'+Math.round(r.monthlyExport).toLocaleString('th-TH')+' หน่วย/เดือน → รายได้เพิ่ม ~'+fmt0(r.sellbackRevenue)+' บาท/เดือน');
+      } else {
+        rows.push('เหลือใช้ไม่หมด/ไม่ได้คิดมูลค่า ~'+Math.round(r.monthlyExport).toLocaleString('th-TH')+' หน่วย/เดือน (เปิด “ขายไฟส่วนเกินคืน” ด้านบนถ้าต้องการคิดเป็นรายได้)');
+      }
     }
     rows.push('<b>ประหยัดโดยประมาณ: '+Math.round(r.monthlySavings).toLocaleString('th-TH')+' บาท/เดือน</b>');
     document.getElementById('s-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
