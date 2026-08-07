@@ -26,14 +26,14 @@
 </section>
 
 <div class="wrap">
-  <!-- Equipment tabs -->
-  <div class="tabs" id="tabs"></div>
-
-  <!-- AD SLOT 1: top banner — อยู่หลังแท็บเลือกอุปกรณ์ ก่อนเริ่มฟอร์มกรอกข้อมูล -->
+  <!-- AD SLOT 1: top banner — อยู่เหนือแท็บเลือกอุปกรณ์ -->
   <div class="ad-slot">
     <span class="ad-label">โฆษณา · Advertisement</span>
     <div class="ad-box" id="ad-slot-top">728×90 / responsive banner</div>
   </div>
+
+  <!-- Equipment tabs -->
+  <div class="tabs" id="tabs"></div>
 
   <div class="grid-main">
     <!-- INPUT COLUMN -->
