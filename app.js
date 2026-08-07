@@ -875,6 +875,10 @@
           '<div class="field-row single">',
             '<div class="field"><label>ค่าใช้จ่ายอื่นๆ (ปรับพื้นที่/ขออนุญาต) — E3 <span class="hint">บาท</span></label><input type="number" id="wr-e3" value="200000" min="0"/></div>',
           '</div>',
+          '<div class="field-row single">',
+            '<div class="field"><label>มูลค่าซากเมื่อสิ้นสุดโครงการ <span class="hint">% ของเงินลงทุน</span></label><input type="number" id="wr-salvage-pct" value="5" min="0" max="100" step="0.5"/>',
+            '<span class="note">มูลค่าขายต่อของเครื่องจักร/อุปกรณ์เมื่อครบอายุโครงการ (ปั๊ม ถัง ระบบท่อ ยังพอมีมูลค่าขายซาก) ปรับได้ตามสภาพและตลาดขายซากจริง</span></div>',
+          '</div>',
           '<div class="sub-preview" id="wr-e-total">รวมเงินลงทุน (E): — บาท</div>',
         '</div>',
 
@@ -941,7 +945,7 @@
         updateWaterRecyclePreview(); calculate();
       });
 
-      ['wr-a','wr-b','wr-d','wr-e1','wr-e2','wr-e3','wr-f1-factor','wr-f2-rate','wr-f3','wr-s2-rate','wr-s3'].forEach(id=>{
+      ['wr-a','wr-b','wr-d','wr-e1','wr-e2','wr-e3','wr-salvage-pct','wr-f1-factor','wr-f2-rate','wr-f3','wr-s2-rate','wr-s3'].forEach(id=>{
         document.getElementById(id).addEventListener('input', ()=>{ updateWaterRecyclePreview(); calculate(); });
       });
       updateWaterRecyclePreview();
@@ -1710,7 +1714,8 @@
     document.getElementById('wr-e-total').textContent = 'รวมเงินลงทุน (E): '+fmt0(r.E)+' บาท';
     document.getElementById('wr-f-total').textContent = 'รวมต้นทุนเดินระบบ (F): '+fmt0(r.F)+' บาท/วัน';
     document.getElementById('wr-s-total').textContent = 'รวมผลประหยัด (S): '+fmt0(r.S)+' บาท/วัน';
-    applyVehicleInvestment(r.E, r.E*0.05); // ใช้กลไกเดียวกับแท็บรถยนต์: เติมเงินลงทุนอัตโนมัติ (มูลค่าซากประเมิน 5% ของทุน)
+    const salvagePct = parseFloat(document.getElementById('wr-salvage-pct').value)||0;
+    applyVehicleInvestment(r.E, r.E*salvagePct/100); // ใช้กลไกเดียวกับแท็บรถยนต์: เติมเงินลงทุนอัตโนมัติ (มูลค่าซากปรับได้จากช่องด้านซ้าย)
     const rows = [
       'ผลประหยัดสุทธิ (S-F) × D = '+fmt0(r.netAnnual)+' บาท/ปี',
       'เทียบเท่า '+fmt0(r.monthlySavings)+' บาท/เดือน',
