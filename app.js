@@ -7,9 +7,7 @@
       <span class="mark">คุ้มทุน<span style="color:var(--primary)">.</span></span>
       <span class="tag">ROI CALC — v1</span>
     </div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-faint);">
-      เครื่องคำนวณการลงทุนพลังงาน
-    </div>
+    <a href="articles.html" style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--primary-dark);text-decoration:none;">📖 บทความ</a>
   </div>
 </header>
 

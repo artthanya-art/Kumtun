@@ -27,6 +27,25 @@
   h1{font-family:'Fraunces',serif;font-size:clamp(26px,4vw,34px);font-weight:600;margin:36px 0 8px;}
   .lead{color:var(--ink-soft);font-size:15px;line-height:1.6;max-width:680px;margin:0 0 22px;}
 
+  .admin-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin-bottom:26px;}
+  .admin-tab-btn{
+    background:none;border:none;padding:10px 18px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;
+    color:var(--ink-faint);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  }
+  .admin-tab-btn.active{color:var(--primary-dark);border-bottom-color:var(--primary);}
+  .admin-tab-btn:hover{color:var(--ink);}
+
+  .article-card-admin{
+    background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:16px;
+  }
+  .article-card-admin .row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;}
+  .article-card-admin .idx-badge{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-faint);background:var(--paper);
+    border:1px solid var(--line);border-radius:6px;padding:3px 8px;flex-shrink:0;
+  }
+  .article-card-admin textarea.content-area{min-height:220px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.6;}
+  .cover-preview{max-width:160px;border-radius:8px;display:block;margin-top:8px;}
+
   .steps{
     background:var(--primary-soft);border-radius:12px;padding:18px 20px;margin-bottom:32px;
   }
@@ -162,8 +181,15 @@
 </header>
 
 <div class="wrap">
-  <h1>จัดการโฆษณาและลิงก์</h1>
-  <p class="lead">เว็บไซต์นี้เป็นเว็บสถิต (static) ไม่มีฐานข้อมูลหรือเซิร์ฟเวอร์เบื้องหลัง หน้านี้จึงเป็น "เครื่องมือช่วยสร้างไฟล์ตั้งค่า" — กรอกข้อมูลด้านล่าง แล้วดาวน์โหลดไฟล์ <code>ads-config.json</code> ไปแทนที่ไฟล์เดิมใน GitHub repo เว็บไซต์จริงจะโหลดค่าที่ตั้งไว้ให้ผู้เข้าชมทุกคนเห็นเหมือนกัน</p>
+  <h1>จัดการเนื้อหาเว็บไซต์</h1>
+  <p class="lead">เว็บไซต์นี้เป็นเว็บสถิต (static) ไม่มีฐานข้อมูลหรือเซิร์ฟเวอร์เบื้องหลัง หน้านี้จึงเป็น "เครื่องมือช่วยสร้างไฟล์ตั้งค่า" — กรอกข้อมูลด้านล่าง แล้วดาวน์โหลดไฟล์ไปแทนที่ไฟล์เดิมใน GitHub repo เว็บไซต์จริงจะโหลดค่าที่ตั้งไว้ให้ผู้เข้าชมทุกคนเห็นเหมือนกัน</p>
+
+  <div class="admin-tabs">
+    <button type="button" class="admin-tab-btn active" data-tab="ads">โฆษณาและลิงก์</button>
+    <button type="button" class="admin-tab-btn" data-tab="articles">บทความ</button>
+  </div>
+
+  <div id="tab-ads" class="admin-tab-panel">
 
   <div class="steps">
     <h2>วิธีใช้งาน</h2>
@@ -203,6 +229,43 @@
       <button type="button" class="btn-secondary" id="download-btn">⬇ ดาวน์โหลดไฟล์ ads-config.json</button>
       <button type="button" class="btn-secondary" id="copy-btn">📋 คัดลอกข้อความ</button>
     </div>
+  </div>
+
+  </div>
+
+  <div id="tab-articles" class="admin-tab-panel" style="display:none;">
+
+  <div class="steps">
+    <h2>วิธีใช้งาน</h2>
+    <ol>
+      <li>ถ้าเคยเพิ่มบทความไว้แล้ว กด "อัปโหลดไฟล์ articles-config.json เดิม" เพื่อโหลดมาแก้ต่อ</li>
+      <li>กด "+ เพิ่มบทความ" แล้วกรอกหัวข้อ วันที่ เกริ่นนำ และเนื้อหา</li>
+      <li>กด "ดาวน์โหลดไฟล์ articles-config.json"</li>
+      <li>อัปโหลดไปแทนที่ไฟล์เดิมใน GitHub repo (เหมือนขั้นตอนของ ads-config.json) → Commit changes</li>
+      <li>รอ 1-2 นาที บทความจะขึ้นที่หน้า <code>articles.html</code> ให้ทุกคนเห็นอัตโนมัติ</li>
+    </ol>
+  </div>
+
+  <div class="upload-row">
+    <label for="articles-upload-input">📂 อัปโหลดไฟล์ articles-config.json เดิม (ถ้ามี)</label>
+    <input type="file" id="articles-upload-input" accept="application/json" />
+    <span class="status" id="articles-upload-status"></span>
+  </div>
+
+  <div id="articles-container"></div>
+  <button type="button" class="btn-add" id="add-article-btn" style="margin-bottom:24px;">+ เพิ่มบทความ</button>
+
+  <div class="output-panel">
+    <h2>ไฟล์บทความที่พร้อมใช้งาน</h2>
+    <p class="desc">กดปุ่มด้านล่างเพื่อสร้างไฟล์ล่าสุดจากบทความที่กรอกไว้ด้านบน</p>
+    <textarea id="articles-json-output" readonly placeholder="กด &quot;สร้างไฟล์&quot; เพื่อดูตัวอย่าง JSON ที่นี่"></textarea>
+    <div class="btn-row">
+      <button type="button" class="btn-primary" id="articles-generate-btn">🔄 สร้างไฟล์ล่าสุด</button>
+      <button type="button" class="btn-secondary" id="articles-download-btn">⬇ ดาวน์โหลดไฟล์ articles-config.json</button>
+      <button type="button" class="btn-secondary" id="articles-copy-btn">📋 คัดลอกข้อความ</button>
+    </div>
+  </div>
+
   </div>
 </div>
 
@@ -481,6 +544,148 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
 
   renderSlots();
   renderLinks();
+
+  /* ---------- Tab switching ---------- */
+  document.querySelectorAll('.admin-tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.admin-tab-btn').forEach(b=> b.classList.toggle('active', b===btn));
+      const target = btn.dataset.tab;
+      document.getElementById('tab-ads').style.display = target==='ads' ? 'block' : 'none';
+      document.getElementById('tab-articles').style.display = target==='articles' ? 'block' : 'none';
+    });
+  });
+
+  /* ---------- Articles management ---------- */
+  let articles = [];
+
+  function newArticleId(){
+    return 'art-'+Date.now()+'-'+Math.floor(Math.random()*1000);
+  }
+
+  function renderArticles(){
+    const container = document.getElementById('articles-container');
+    if(articles.length===0){
+      container.innerHTML = '<p style="color:var(--ink-faint);font-size:13px;margin-bottom:16px;">ยังไม่มีบทความ กด "+ เพิ่มบทความ" ด้านล่างเพื่อเริ่มเขียนบทความแรก</p>';
+      return;
+    }
+    container.innerHTML = articles.map((a,i)=>{
+      return [
+        '<div class="article-card-admin" data-idx="'+i+'">',
+          '<div class="row-top">',
+            '<span class="idx-badge">บทความที่ '+(i+1)+'</span>',
+            '<button type="button" class="rm-btn" data-rm-article="'+i+'" title="ลบบทความนี้">✕</button>',
+          '</div>',
+          '<div class="field-row">',
+            '<div class="field"><label>หัวข้อบทความ</label><input type="text" data-af="title" value="'+(a.title||'').replace(/"/g,'&quot;')+'" placeholder="เช่น 5 วิธีลดค่าไฟฟ้าช่วงหน้าร้อน"/></div>',
+            '<div class="field"><label>วันที่เผยแพร่</label><input type="date" data-af="date" value="'+(a.date||'')+'"/></div>',
+          '</div>',
+          '<div class="field-row single"><div class="field"><label>เกริ่นนำ (แสดงในหน้ารวมบทความ)</label><textarea data-af="excerpt" rows="2" placeholder="สรุปสั้นๆ 1-2 ประโยค">'+(a.excerpt||'')+'</textarea></div></div>',
+          '<div class="field-row single"><div class="field"><label>รูปปก (ถ้ามี)</label>',
+            '<input type="file" accept="image/*" data-af-cover="'+i+'"/>',
+            (a.coverImage ? '<img class="cover-preview" src="'+a.coverImage+'" alt=""/>' : ''),
+          '</div></div>',
+          '<div class="field-row single"><div class="field"><label>เนื้อหาบทความ</label>',
+            '<textarea class="content-area" data-af="content" placeholder="เขียนเป็นข้อความธรรมดาได้เลย (แต่ละย่อหน้าเว้นบรรทัดว่างคั่น) หรือใส่โค้ด HTML เอง เช่น &lt;h2&gt;หัวข้อย่อย&lt;/h2&gt; เพื่อจัดรูปแบบเพิ่มเติม">'+(a.content||'')+'</textarea>',
+            '<span class="note">รองรับ HTML พื้นฐาน เช่น &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;&lt;li&gt;, &lt;strong&gt;, &lt;img src="..."&gt; ถ้าเขียนเป็นข้อความธรรมดาไม่มีแท็ก ระบบจะแบ่งย่อหน้าให้อัตโนมัติตามบรรทัดว่าง</span>',
+          '</div></div>',
+        '</div>'
+      ].join('');
+    }).join('');
+
+    container.querySelectorAll('[data-af]').forEach(input=>{
+      input.addEventListener('input', e=>{
+        const idx = +e.target.closest('.article-card-admin').dataset.idx;
+        const field = e.target.dataset.af;
+        articles[idx][field] = e.target.value;
+      });
+    });
+    container.querySelectorAll('[data-rm-article]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        articles.splice(+e.target.dataset.rmArticle, 1);
+        renderArticles();
+      });
+    });
+    container.querySelectorAll('[data-af-cover]').forEach(input=>{
+      input.addEventListener('change', e=>{
+        const idx = +e.target.dataset.afCover;
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ev=>{
+          articles[idx].coverImage = ev.target.result;
+          renderArticles();
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  }
+
+  document.getElementById('add-article-btn').addEventListener('click', ()=>{
+    articles.unshift({ id:newArticleId(), title:'', excerpt:'', date:new Date().toISOString().slice(0,10), content:'', coverImage:'' });
+    renderArticles();
+  });
+
+  function autoParagraph(text){
+    if(!text) return '';
+    if(/<[a-z][\s\S]*>/i.test(text)) return text; // มีแท็ก HTML อยู่แล้ว ใช้ตามที่เขียนไว้เลย
+    return text.split(/\n\s*\n/).map(p=> '<p>'+p.trim().replace(/\n/g,'<br/>')+'</p>').join('');
+  }
+
+  function buildArticlesConfig(){
+    return {
+      articles: articles
+        .filter(a=> a.title && a.title.trim())
+        .map(a=> ({ id:a.id, title:a.title, excerpt:a.excerpt||'', date:a.date||'', coverImage:a.coverImage||'', content:autoParagraph(a.content||'') }))
+    };
+  }
+
+  document.getElementById('articles-generate-btn').addEventListener('click', ()=>{
+    document.getElementById('articles-json-output').value = JSON.stringify(buildArticlesConfig(), null, 2);
+  });
+
+  document.getElementById('articles-download-btn').addEventListener('click', ()=>{
+    const json = JSON.stringify(buildArticlesConfig(), null, 2);
+    document.getElementById('articles-json-output').value = json;
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'articles-config.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('articles-copy-btn').addEventListener('click', async ()=>{
+    const json = JSON.stringify(buildArticlesConfig(), null, 2);
+    document.getElementById('articles-json-output').value = json;
+    try{
+      await navigator.clipboard.writeText(json);
+      const btn = document.getElementById('articles-copy-btn');
+      const old = btn.textContent; btn.textContent = '✓ คัดลอกแล้ว';
+      setTimeout(()=> btn.textContent = old, 1500);
+    }catch(e){ console.warn('copy failed', e); }
+  });
+
+  document.getElementById('articles-upload-input').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        const parsed = JSON.parse(ev.target.result);
+        articles = (Array.isArray(parsed.articles) ? parsed.articles : []).map(a=> ({
+          id: a.id || newArticleId(), title:a.title||'', excerpt:a.excerpt||'', date:a.date||'',
+          coverImage:a.coverImage||'', content:a.content||''
+        }));
+        renderArticles();
+        document.getElementById('articles-upload-status').textContent = '✓ โหลด '+file.name+' สำเร็จ ('+articles.length+' บทความ)';
+      }catch(err){
+        document.getElementById('articles-upload-status').textContent = '✕ ไฟล์ไม่ถูกต้อง: '+err.message;
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  renderArticles();
 })();
 </script>
 </body>
