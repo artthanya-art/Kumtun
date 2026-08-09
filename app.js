@@ -96,6 +96,42 @@
       </div>
 
       <div class="panel">
+        <h2>เทียบกับ Subscription / BOO / PPA</h2>
+        <p class="desc">เปรียบเทียบการซื้อขาด (ด้านบน) กับรูปแบบไม่ต้องลงทุนเอง จ่ายเป็นค่าบริการรายเดือนหรือตามปริมาณที่ใช้จริงแทน (เช่น โซลาร์เช่า/PPA, ระบบน้ำแบบ BOO)</p>
+
+        <div class="toggle-row" id="f-sub-toggle-row">
+          <input type="checkbox" id="f-sub-enabled" />
+          <label for="f-sub-enabled">เปิดเปรียบเทียบกับ Subscription/BOO/PPA</label>
+        </div>
+
+        <div id="sub-fields" style="display:none;">
+          <div class="field-row single">
+            <div class="field">
+              <label>รูปแบบการจ่ายค่าบริการ</label>
+              <select id="f-sub-type">
+                <option value="fixed">จ่ายคงที่รายเดือน</option>
+                <option value="perunit">จ่ายตามปริมาณหน่วยไฟ/น้ำที่ผลิต/ใช้ได้จริง</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row single" id="f-sub-fixed-wrap">
+            <div class="field">
+              <label>ค่าบริการคงที่ <span class="hint">บาท/เดือน</span></label>
+              <input type="number" id="f-sub-fixed-rate" value="2000" min="0" />
+            </div>
+          </div>
+          <div class="field-row single" id="f-sub-perunit-wrap" style="display:none;">
+            <div class="field">
+              <label>อัตราค่าบริการต่อหน่วย <span class="hint">บาท/หน่วย</span></label>
+              <input type="number" id="f-sub-perunit-rate" value="3.5" min="0" step="0.1" />
+              <span class="note">คูณกับปริมาณหน่วยไฟ/น้ำที่อุปกรณ์นี้ผลิต/ประหยัดได้จริงต่อเดือน (เช่น PPA โซลาร์จ่ายตามหน่วยไฟที่ผลิตได้จริง — หน่วยจะต่างกันตามประเภทอุปกรณ์ ดูหน่วยที่ระบุในกล่องสรุปด้านล่าง)</span>
+            </div>
+          </div>
+          <div class="sub-preview" id="sub-preview">—</div>
+        </div>
+      </div>
+
+      <div class="panel">
         <h2 id="energy-panel-title">ค่าไฟฟ้าและพลังงาน</h2>
         <p class="desc" id="energy-panel-desc">ใช้คำนวณมูลค่าเงินที่ประหยัดได้ และปริมาณ CO2 ที่ลดได้</p>
         <div class="field-row">
@@ -1862,6 +1898,49 @@
     return parseFloat(document.getElementById('d-savings').value)||0;
   }
 
+  // ปริมาณหน่วยไฟ/น้ำที่อุปกรณ์นี้ผลิต/ประหยัดได้ต่อเดือน — ใช้คำนวณค่าบริการ Subscription/PPA แบบจ่ายตาม output จริง
+  // คืนค่า {units, label} เพราะแต่ละประเภทอุปกรณ์วัดเป็นคนละหน่วยกัน (kWh ไฟฟ้า vs ลบ.ม. น้ำ)
+  function getMonthlyOutputUnits(){
+    const type = EQUIPMENT[activeTab].subcalc;
+    if(type==='solar') return { units: computeSolarDetail().monthlyGenKwh, label:'หน่วยไฟฟ้า (kWh) ที่ผลิตได้' };
+    if(type==='led') return { units: computeLedDetail().monthlyKwh, label:'หน่วยไฟฟ้า (kWh) ที่ประหยัดได้' };
+    if(type==='insulation') return { units: computeInsulationDetail().kwhMonth, label:'หน่วยไฟฟ้า (kWh) ที่ประหยัดได้' };
+    if(type==='other') return { units: computeOtherDetail().monthlyKwh, label:'หน่วยไฟฟ้า (kWh) ที่ประหยัดได้' };
+    if(type==='water') return { units: computeWaterDetail().litersMonth/1000, label:'ลูกบาศก์เมตร (ลบ.ม.) น้ำที่ประหยัดได้' };
+    if(type==='waterrecycle') return { units: computeWaterRecycleDetail().volumeMonth, label:'ลูกบาศก์เมตร (ลบ.ม.) น้ำที่รีไซเคิลได้' };
+    if(type==='bev') return { units: computeBevDetail().kwhUsed, label:'หน่วยไฟฟ้า (kWh) ที่ใช้ชาร์จ' };
+    return { units: 0, label:'หน่วย' };
+  }
+
+  // ค่าบริการ Subscription/BOO/PPA รายเดือน ตามรูปแบบที่เลือก (คงที่ หรือ ตามปริมาณ output จริง)
+  function computeSubscriptionCost(){
+    const subType = document.getElementById('f-sub-type').value;
+    if(subType==='fixed'){
+      const fixedRate = parseFloat(document.getElementById('f-sub-fixed-rate').value)||0;
+      return { monthlyCost: fixedRate, outputInfo: null };
+    }
+    const outputInfo = getMonthlyOutputUnits();
+    const perUnitRate = parseFloat(document.getElementById('f-sub-perunit-rate').value)||0;
+    return { monthlyCost: outputInfo.units*perUnitRate, outputInfo };
+  }
+
+  function updateSubscriptionPreview(){
+    const enabled = document.getElementById('f-sub-enabled').checked;
+    document.getElementById('sub-fields').style.display = enabled ? 'block' : 'none';
+    if(!enabled) return;
+    const sub = computeSubscriptionCost();
+    const avoided = getMonthlySavings(); // มูลค่าที่ประหยัดได้จากค่าไฟ/น้ำเดิม (ฝั่งผู้ใช้ยังได้รับผลประโยชน์นี้เหมือนเดิมไม่ว่าจะเลือกซื้อขาดหรือ subscription)
+    const netSub = avoided - sub.monthlyCost;
+    const rows = [];
+    if(sub.outputInfo){
+      rows.push('ปริมาณ: ~'+fmt0(sub.outputInfo.units)+' '+sub.outputInfo.label+'/เดือน');
+    }
+    rows.push('ค่าบริการ Subscription/PPA ~'+fmt0(sub.monthlyCost)+' บาท/เดือน');
+    rows.push('มูลค่าที่ประหยัดได้จากค่าไฟ/น้ำเดิม ~'+fmt0(avoided)+' บาท/เดือน (ได้เท่ากันไม่ว่าจะเลือกแบบไหน)');
+    rows.push('<b>ประหยัดสุทธิถ้าเลือก Subscription: '+fmt0(netSub)+' บาท/เดือน (ไม่ต้องลงทุนซื้อเองเลย)</b>');
+    document.getElementById('sub-preview').innerHTML = rows.map(x=>'<div>'+x+'</div>').join('');
+  }
+
   // คืนค่า kgCO2 ที่ลดได้ต่อเดือน — คำนวณต่างกันตามประเภทอุปกรณ์ (ไฟฟ้าที่ไม่ใช้จากกริด vs. น้ำมันที่ไม่เผาผลาญ)
   function getMonthlyCo2Kg(){
     const type = EQUIPMENT[activeTab].subcalc;
@@ -1890,6 +1969,19 @@
   document.getElementById('f-loan-enabled').addEventListener('change', function(){
     document.getElementById('loan-fields').style.display = this.checked ? 'block' : 'none';
     calculate();
+  });
+  document.getElementById('f-sub-enabled').addEventListener('change', function(){
+    updateSubscriptionPreview();
+    calculate();
+  });
+  document.getElementById('f-sub-type').addEventListener('change', function(){
+    document.getElementById('f-sub-fixed-wrap').style.display = this.value==='fixed' ? 'block' : 'none';
+    document.getElementById('f-sub-perunit-wrap').style.display = this.value==='perunit' ? 'block' : 'none';
+    updateSubscriptionPreview();
+    calculate();
+  });
+  ['f-sub-fixed-rate','f-sub-perunit-rate'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', ()=>{ updateSubscriptionPreview(); calculate(); });
   });
   document.getElementById('advanced-toggle').addEventListener('click', function(){
     const body = document.getElementById('advanced-body');
@@ -2018,6 +2110,7 @@
   /* ---------------- Master calculation ---------------- */
   let chart;
   function calculate(){
+    updateSubscriptionPreview();
     const cost = parseFloat(document.getElementById('f-cost').value)||0;
     const subsidy = Math.min(parseFloat(document.getElementById('f-subsidy').value)||0, cost);
     const netInvestment = Math.max(cost - subsidy, 0);
@@ -2079,10 +2172,16 @@
       ledReplaceEvents = ledEvents.replace;
     }
 
-    const years=[], grossSavingsArr=[], maintArr=[], netCFArr=[], ownerCFArr=[];
+    const subEnabled = document.getElementById('f-sub-enabled').checked;
+    const subInfo = subEnabled ? computeSubscriptionCost() : null;
+    const subIsPerUnit = subEnabled && document.getElementById('f-sub-type').value==='perunit';
+    const subAnnual0 = subInfo ? subInfo.monthlyCost*12 : 0;
+
+    const years=[], grossSavingsArr=[], maintArr=[], netCFArr=[], ownerCFArr=[], subCumArr=[];
     let cumUndiscounted = -netInvestment; // asset-level payback (ignores financing structure)
     let cumOwner = -upfrontOutflow;
     let cumDiscounted = -upfrontOutflow;
+    let cumSubscription = 0; // Subscription/PPA ไม่มีเงินลงทุนเริ่มต้น จึงเริ่มที่ 0 ไม่ใช่ -investment แบบซื้อขาด
     let simplePaybackYear=null, discPaybackYear=null;
     let totalLifetimeSavings=0, totalCo2Kg=0, totalSpecial=0;
 
@@ -2123,6 +2222,13 @@
       totalLifetimeSavings += savings_t;
       totalCo2Kg += co2_t;
       totalSpecial += special_t;
+
+      if(subEnabled){
+        // ค่าบริการแบบตามหน่วย (PPA) ผันตามปริมาณ output ที่ลดลงตามการเสื่อมสภาพเหมือนกับฝั่งประหยัดจริง ส่วนแบบคงที่รายเดือนไม่ผัน
+        const subCost_t = subIsPerUnit ? subAnnual0 * Math.pow(1-degradation,t-1) : subAnnual0;
+        cumSubscription += (savings_t - subCost_t);
+      }
+      subCumArr.push(cumSubscription);
 
       years.push(t);
       grossSavingsArr.push(savings_t);
@@ -2182,25 +2288,40 @@
       const ctx = document.getElementById('cashflow-chart').getContext('2d');
       const chartData = [-upfrontOutflow, ...ownerCFArr];
       const chartLabels = ['0', ...years.map(String)];
+      const datasets = [{
+        label:'ซื้อขาด',
+        data: chartData,
+        borderColor:'#1F6F54',
+        backgroundColor:'rgba(31,111,84,0.12)',
+        fill:true,
+        tension:0.25,
+        pointRadius:0,
+        borderWidth:2.5
+      }];
+      if(subEnabled){
+        datasets.push({
+          label:'Subscription/PPA',
+          data: [0, ...subCumArr],
+          borderColor:'#C9871F',
+          backgroundColor:'rgba(201,135,31,0.08)',
+          fill:true,
+          tension:0.25,
+          pointRadius:0,
+          borderWidth:2.5,
+          borderDash:[6,4]
+        });
+      }
       if(chart) chart.destroy();
       chart = new Chart(ctx, {
         type:'line',
         data:{
           labels: chartLabels,
-          datasets:[{
-            data: chartData,
-            borderColor:'#1F6F54',
-            backgroundColor:'rgba(31,111,84,0.12)',
-            fill:true,
-            tension:0.25,
-            pointRadius:0,
-            borderWidth:2.5
-          }]
+          datasets
         },
         options:{
           responsive:true,
           maintainAspectRatio:false,
-          plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=> fmt0(c.parsed.y)+' บาท'}}},
+          plugins:{legend:{display:subEnabled, position:'top', labels:{font:{family:'Inter',size:11.5}, boxWidth:14}}, tooltip:{callbacks:{label:(c)=> c.dataset.label+': '+fmt0(c.parsed.y)+' บาท'}}},
           scales:{
             x:{grid:{display:false}, ticks:{font:{family:'JetBrains Mono',size:10}, maxTicksLimit:12}, title:{display:true,text:'ปีที่',font:{size:11}}},
             y:{grid:{color:'#DEE5DC'}, ticks:{font:{family:'JetBrains Mono',size:10}, callback:(v)=> (v/1000)+'k'}}
@@ -2211,6 +2332,26 @@
     }catch(err){
       console.warn('คำนวณผลลัพธ์ได้ตามปกติ แต่วาดกราฟไม่สำเร็จ:', err);
       fallbackEl.style.display = 'block';
+    }
+
+    // สรุปเปรียบเทียบซื้อขาด vs Subscription/PPA เมื่อครบระยะเวลาวิเคราะห์
+    if(subEnabled && subCumArr.length>0){
+      const finalBuy = cumOwner;
+      const finalSub = subCumArr[subCumArr.length-1];
+      const diff = finalBuy - finalSub;
+      const winner = diff>0 ? 'ซื้อขาด' : (diff<0 ? 'Subscription/PPA' : 'เท่ากัน');
+      const summary = 'เมื่อครบ '+effectiveYears+' ปี — <b>'+winner+'</b> ให้ผลตอบแทนสุทธิดีกว่า ~'+fmt0(Math.abs(diff))+' บาท '+
+        '(ซื้อขาดสะสม '+fmt0(finalBuy)+' บาท เทียบกับ Subscription สะสม '+fmt0(finalSub)+' บาท — Subscription ไม่ต้องใช้เงินลงทุนก้อนแรกเลย)';
+      const existingSummary = document.getElementById('sub-compare-summary');
+      if(existingSummary) existingSummary.remove();
+      const summaryEl = document.createElement('div');
+      summaryEl.id = 'sub-compare-summary';
+      summaryEl.style.cssText = 'margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);';
+      summaryEl.innerHTML = summary;
+      document.getElementById('sub-preview').appendChild(summaryEl);
+    } else {
+      const existingSummary = document.getElementById('sub-compare-summary');
+      if(existingSummary) existingSummary.remove();
     }
   }
 
