@@ -121,7 +121,7 @@
       '<div class="hero"><h1>บทความ</h1><p>ความรู้เรื่องการประหยัดพลังงานและทรัพยากร อัปเดตเรื่อยๆ</p></div>',
       '<div class="article-grid">',
       sorted.map(a=>
-        '<a class="article-card" href="#'+encodeURIComponent(a.id)+'">'+
+        '<a class="article-card" href="'+(a.link || ('article/'+encodeURIComponent(a.slug||a.id)+'.html'))+'">'+
           '<div class="date">'+formatDate(a.date)+'</div>'+
           '<h2>'+(a.title||'ไม่มีชื่อบทความ')+'</h2>'+
           (a.excerpt ? '<p class="excerpt">'+a.excerpt+'</p>' : '')+
@@ -132,42 +132,17 @@
     ].join('');
   }
 
-  function renderDetail(article){
-    const el = document.getElementById('content');
-    el.innerHTML = [
-      '<div class="article-detail">',
-        '<div style="margin:24px 0 18px;"><a class="back-link" href="#">← กลับไปหน้ารวมบทความ</a></div>',
-        '<div class="date">'+formatDate(article.date)+'</div>',
-        '<h1>'+(article.title||'ไม่มีชื่อบทความ')+'</h1>',
-        (article.coverImage ? '<img class="cover" src="'+article.coverImage+'" alt="'+escapeAttr(article.title)+'"/>' : ''),
-        '<div class="article-body">'+(article.content||'')+'</div>',
-      '</div>'
-    ].join('');
-    window.scrollTo(0,0);
-  }
-
-  function route(articles){
-    const hash = decodeURIComponent(location.hash.replace(/^#/,''));
-    if(hash){
-      const found = articles.find(a=> a.id===hash);
-      if(found){ renderDetail(found); return; }
-    }
-    renderList(articles);
-  }
-
   let allArticles = [];
   fetch('articles-config.json', {cache:'no-store'})
     .then(r=> r.ok ? r.json() : {articles:[]})
     .then(cfg=>{
       allArticles = Array.isArray(cfg.articles) ? cfg.articles : [];
-      route(allArticles);
+      renderList(allArticles);
     })
     .catch(()=>{
       document.getElementById('content').innerHTML =
         '<div class="hero"><h1>บทความ</h1></div><div class="empty-state">ไม่สามารถโหลดบทความได้ในขณะนี้</div>';
     });
-
-  window.addEventListener('hashchange', ()=> route(allArticles));
 })();
 </script>
 </body>

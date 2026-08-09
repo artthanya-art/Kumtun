@@ -127,6 +127,11 @@
     font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
   }
   .btn-secondary:hover{background:#243b30;}
+  .btn-secondary-sm{
+    background:var(--paper);color:var(--primary-dark);border:1px solid var(--primary);border-radius:8px;
+    padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .btn-secondary-sm:hover{background:var(--primary-soft);}
 
   .upload-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;}
   .upload-row label{
@@ -243,13 +248,13 @@
   <div id="tab-articles" class="admin-tab-panel" style="display:none;">
 
   <div class="steps">
-    <h2>วิธีใช้งาน</h2>
+    <h2>วิธีใช้งาน (มี 2 ไฟล์ต้องอัปโหลดต่อการเปลี่ยนแปลง)</h2>
     <ol>
       <li>ถ้าเคยเพิ่มบทความไว้แล้ว กด "อัปโหลดไฟล์ articles-config.json เดิม" เพื่อโหลดมาแก้ต่อ</li>
-      <li>กด "+ เพิ่มบทความ" แล้วกรอกหัวข้อ วันที่ เกริ่นนำ และเนื้อหา</li>
-      <li>กด "ดาวน์โหลดไฟล์ articles-config.json"</li>
-      <li>อัปโหลดไปแทนที่ไฟล์เดิมใน GitHub repo (เหมือนขั้นตอนของ ads-config.json) → Commit changes</li>
-      <li>รอ 1-2 นาที บทความจะขึ้นที่หน้า <code>articles.html</code> ให้ทุกคนเห็นอัตโนมัติ</li>
+      <li>กด "+ เพิ่มบทความ" แล้วกรอกหัวข้อ วันที่ เกริ่นนำ รูปปก และเนื้อหา — ตรวจชื่อไฟล์ (slug) ให้เรียบร้อยก่อนเผยแพร่จริง เพราะถ้าแก้ทีหลังลิงก์เดิมจะใช้ไม่ได้</li>
+      <li><b>ไฟล์ที่ 1:</b> กด "📄 ดาวน์โหลดไฟล์ HTML บทความนี้" ที่แต่ละบทความ (หรือ "ดาวน์โหลดทุกบทความเป็นไฟล์ HTML" เพื่อเอาทีเดียวหมด) แล้วอัปโหลดไฟล์ .html ที่ได้ไปไว้ในโฟลเดอร์ <code>article/</code> ของ GitHub repo (พิมพ์ <code>article/ชื่อไฟล์.html</code> ตอนอัปโหลดเพื่อสร้างโฟลเดอร์อัตโนมัติถ้ายังไม่มี)</li>
+      <li><b>ไฟล์ที่ 2:</b> กด "ดาวน์โหลดไฟล์ articles-config.json" แล้วอัปโหลดไปแทนที่ไฟล์เดิมที่ root ของ repo (ไฟล์นี้คือรายการสรุปที่หน้ารวมบทความใช้แสดงการ์ด)</li>
+      <li>รอ 1-2 นาที บทความจะขึ้นที่หน้า <code>articles.html</code> และเปิดอ่านแยกได้ที่ลิงก์จริง เช่น <code>article/ชื่อไฟล์.html</code> ให้ทุกคนเห็นอัตโนมัติ</li>
     </ol>
   </div>
 
@@ -260,11 +265,14 @@
   </div>
 
   <div id="articles-container"></div>
-  <button type="button" class="btn-add" id="add-article-btn" style="margin-bottom:24px;">+ เพิ่มบทความ</button>
+  <div class="btn-row" style="margin-bottom:24px;">
+    <button type="button" class="btn-add" id="add-article-btn">+ เพิ่มบทความ</button>
+    <button type="button" class="btn-add" id="articles-download-all-btn">📄 ดาวน์โหลดทุกบทความเป็นไฟล์ HTML</button>
+  </div>
 
   <div class="output-panel">
-    <h2>ไฟล์บทความที่พร้อมใช้งาน</h2>
-    <p class="desc">กดปุ่มด้านล่างเพื่อสร้างไฟล์ล่าสุดจากบทความที่กรอกไว้ด้านบน</p>
+    <h2>ไฟล์ articles-config.json (รายการสรุปสำหรับหน้ารวมบทความ)</h2>
+    <p class="desc">กดปุ่มด้านล่างเพื่อสร้างไฟล์ล่าสุดจากบทความที่กรอกไว้ด้านบน — ไฟล์นี้ไม่มีเนื้อหาเต็มของบทความ (อยู่ในไฟล์ HTML แยกแล้ว) จึงมีขนาดเล็กและโหลดเร็ว</p>
     <textarea id="articles-json-output" readonly placeholder="กด &quot;สร้างไฟล์&quot; เพื่อดูตัวอย่าง JSON ที่นี่"></textarea>
     <div class="btn-row">
       <button type="button" class="btn-primary" id="articles-generate-btn">🔄 สร้างไฟล์ล่าสุด</button>
@@ -586,7 +594,14 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
             '<div class="field"><label>หัวข้อบทความ</label><input type="text" data-af="title" value="'+(a.title||'').replace(/"/g,'&quot;')+'" placeholder="เช่น 5 วิธีลดค่าไฟฟ้าช่วงหน้าร้อน"/></div>',
             '<div class="field"><label>วันที่เผยแพร่</label><input type="date" data-af="date" value="'+(a.date||'')+'"/></div>',
           '</div>',
-          '<div class="field-row single"><div class="field"><label>เกริ่นนำ (แสดงในหน้ารวมบทความ)</label><textarea data-af="excerpt" rows="2" placeholder="สรุปสั้นๆ 1-2 ประโยค">'+(a.excerpt||'')+'</textarea></div></div>',
+          '<div class="field-row single"><div class="field"><label>ชื่อไฟล์ (slug) — จะได้ไฟล์ article/ชื่อนี้.html</label>',
+            '<div class="cover-input-row">',
+              '<input type="text" data-af="slug" value="'+(a.slug||'').replace(/"/g,'&quot;')+'" placeholder="เช่น 5-วิธีลดค่าไฟฟ้า"/>',
+              '<button type="button" class="rm-btn" data-regen-slug="'+i+'" title="สร้างจากหัวข้ออัตโนมัติ">🔄</button>',
+            '</div>',
+            '<span class="note">ใช้เป็นชื่อไฟล์ URL จริง — ห้ามมีช่องว่าง/อักขระพิเศษ (ระบบแทนที่ให้อัตโนมัติถ้ากดปุ่ม 🔄) ถ้าแก้หัวข้อทีหลัง ชื่อไฟล์นี้จะไม่เปลี่ยนตาม เพื่อไม่ให้ลิงก์ที่แชร์ไปแล้วเสีย</span></div>',
+          '</div>',
+          '<div class="field-row single"><div class="field"><label>เกริ่นนำ (แสดงในหน้ารวมบทความ + คำอธิบายตอนแชร์ลิงก์)</label><textarea data-af="excerpt" rows="2" placeholder="สรุปสั้นๆ 1-2 ประโยค">'+(a.excerpt||'')+'</textarea></div></div>',
           '<div class="field-row single"><div class="field"><label>รูปปก (พาธไฟล์ในโฟลเดอร์ pic/)</label>',
             '<div class="cover-input-row">',
               '<input type="text" data-af="coverImage" value="'+(a.coverImage||'').replace(/"/g,'&quot;')+'" placeholder="เช่น pic/cover1.jpg"/>',
@@ -597,8 +612,11 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
           '</div></div>',
           '<div class="field-row single"><div class="field"><label>เนื้อหาบทความ</label>',
             '<textarea class="content-area" data-af="content" placeholder="เขียนเป็นข้อความธรรมดาได้เลย (แต่ละย่อหน้าเว้นบรรทัดว่างคั่น) หรือใส่โค้ด HTML เอง เช่น &lt;h2&gt;หัวข้อย่อย&lt;/h2&gt; เพื่อจัดรูปแบบเพิ่มเติม">'+(a.content||'')+'</textarea>',
-            '<span class="note">รองรับ HTML พื้นฐาน เช่น &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;&lt;li&gt;, &lt;strong&gt;, &lt;img src="..."&gt; ถ้าเขียนเป็นข้อความธรรมดาไม่มีแท็ก ระบบจะแบ่งย่อหน้าให้อัตโนมัติตามบรรทัดว่าง</span>',
+            '<span class="note">รองรับ HTML พื้นฐาน เช่น &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;&lt;li&gt;, &lt;strong&gt;, &lt;img src="..."&gt; ถ้าเขียนเป็นข้อความธรรมดาไม่มีแท็ก ระบบจะแบ่งย่อหน้าให้อัตโนมัติตามบรรทัดว่าง — รูปภาพในเนื้อหาให้อ้างอิงพาธแบบ <code>../pic/ชื่อไฟล์.jpg</code> เพราะไฟล์ HTML บทความจะอยู่ในโฟลเดอร์ article/</span>',
           '</div></div>',
+          '<div class="btn-row" style="margin-top:4px;">',
+            '<button type="button" class="btn-secondary-sm" data-download-article="'+i+'">📄 ดาวน์โหลดไฟล์ HTML บทความนี้ (article/'+(a.slug||'...')+'.html)</button>',
+          '</div>',
         '</div>'
       ].join('');
     }).join('');
@@ -614,6 +632,19 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
       btn.addEventListener('click', e=>{
         articles.splice(+e.target.dataset.rmArticle, 1);
         renderArticles();
+      });
+    });
+    container.querySelectorAll('[data-regen-slug]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        const idx = +e.target.dataset.regenSlug;
+        articles[idx].slug = slugify(articles[idx].title) || newArticleId();
+        renderArticles();
+      });
+    });
+    container.querySelectorAll('[data-download-article]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        const idx = +e.target.dataset.downloadArticle;
+        downloadArticleHtml(articles[idx]);
       });
     });
     container.querySelectorAll('[data-af="coverImage"]').forEach(input=>{
@@ -647,9 +678,17 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
   }
 
   document.getElementById('add-article-btn').addEventListener('click', ()=>{
-    articles.unshift({ id:newArticleId(), title:'', excerpt:'', date:new Date().toISOString().slice(0,10), content:'', coverImage:'' });
+    articles.unshift({ id:newArticleId(), slug:'', title:'', excerpt:'', date:new Date().toISOString().slice(0,10), content:'', coverImage:'' });
     renderArticles();
   });
+
+  function slugify(title){
+    if(!title) return '';
+    return title.trim()
+      .replace(/[\/\\?%*:|"<>#&=+]/g, '')
+      .replace(/\s+/g, '-')
+      .slice(0, 80);
+  }
 
   function autoParagraph(text){
     if(!text) return '';
@@ -657,11 +696,122 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
     return text.split(/\n\s*\n/).map(p=> '<p>'+p.trim().replace(/\n/g,'<br/>')+'</p>').join('');
   }
 
+  function escapeHtml(s){
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  const SITE_URL = 'https://kumtun.com';
+
+  function formatThaiDate(iso){
+    if(!iso) return '';
+    try{
+      const d = new Date(iso+'T00:00:00');
+      return d.toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'});
+    }catch(e){ return iso; }
+  }
+
+  // สร้างไฟล์ HTML แบบสมบูรณ์ในตัวเอง (มี title/meta description/Open Graph ของบทความนั้นโดยเฉพาะ)
+  // เพื่อให้ Google และบอทแชร์ลิงก์อ่านเนื้อหาได้ทันทีโดยไม่ต้องรอ JavaScript — ต่างจากระบบ hash เดิม
+  function buildArticleHtml(a){
+    const title = a.title || 'บทความ';
+    const desc = (a.excerpt||'').replace(/<[^>]+>/g,'').slice(0,160);
+    const slug = a.slug || slugify(a.title) || a.id;
+    const url = SITE_URL+'/article/'+slug+'.html';
+    const coverUrl = a.coverImage ? SITE_URL+'/'+a.coverImage : '';
+    const body = autoParagraph(a.content||'');
+    return '<!DOCTYPE html>\n'+
+'<html lang="th">\n'+
+'<head>\n'+
+'<meta charset="UTF-8" />\n'+
+'<meta name="viewport" content="width=device-width, initial-scale=1.0" />\n'+
+'<title>'+escapeHtml(title)+' — คุ้มทุน</title>\n'+
+'<meta name="description" content="'+escapeHtml(desc)+'" />\n'+
+'<link rel="canonical" href="'+url+'" />\n'+
+'<meta property="og:type" content="article" />\n'+
+'<meta property="og:title" content="'+escapeHtml(title)+'" />\n'+
+'<meta property="og:description" content="'+escapeHtml(desc)+'" />\n'+
+'<meta property="og:url" content="'+url+'" />\n'+
+(coverUrl ? '<meta property="og:image" content="'+coverUrl+'" />\n' : '')+
+'<meta name="twitter:card" content="'+(coverUrl?'summary_large_image':'summary')+'" />\n'+
+'<link rel="preconnect" href="https://fonts.googleapis.com" />\n'+
+'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n'+
+'<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />\n'+
+'<script type="application/ld+json">\n'+
+JSON.stringify({
+  "@context":"https://schema.org", "@type":"Article",
+  "headline": title, "description": desc, "datePublished": a.date||'',
+  ...(coverUrl ? {"image":coverUrl} : {}),
+  "publisher": {"@type":"Organization","name":"คุ้มทุน"}
+}, null, 2)+
+'\n<\/script>\n'+
+'<style>\n'+
+'  :root{--paper:#EEF2EC;--paper-raised:#FBFCFA;--ink:#182620;--ink-soft:#4E5D54;--ink-faint:#8A968D;--line:#C9D2C9;--primary:#1F6F54;--primary-dark:#134637;--radius:14px;}\n'+
+'  *{box-sizing:border-box;} html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden;}\n'+
+'  body{background:var(--paper);color:var(--ink);font-family:\'Inter\',sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6;}\n'+
+'  .wrap{max-width:860px;margin:0 auto;padding:0 24px;}\n'+
+'  a{color:var(--primary-dark);} .back-link{font-size:13px;font-weight:600;text-decoration:none;}\n'+
+'  header{border-bottom:1px solid var(--line);background:var(--paper-raised);}\n'+
+'  header .bar{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:860px;margin:0 auto;padding:0 24px;}\n'+
+'  .brand{font-family:\'Fraunces\',serif;font-weight:700;font-size:20px;}\n'+
+'  .article-detail{margin-bottom:60px;}\n'+
+'  .article-detail .date{font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--ink-faint);margin:24px 0 10px;}\n'+
+'  .article-detail h1{font-family:\'Fraunces\',serif;font-size:clamp(26px,4.5vw,36px);font-weight:600;margin:0 0 20px;line-height:1.25;}\n'+
+'  .article-detail .cover{width:100%;border-radius:var(--radius);margin-bottom:24px;display:block;}\n'+
+'  .article-body{font-size:16px;line-height:1.85;color:var(--ink);}\n'+
+'  .article-body p{margin:0 0 18px;} .article-body h2{font-family:\'Fraunces\',serif;font-size:22px;font-weight:600;margin:32px 0 14px;}\n'+
+'  .article-body h3{font-family:\'Fraunces\',serif;font-size:18px;font-weight:600;margin:26px 0 12px;}\n'+
+'  .article-body ul,.article-body ol{margin:0 0 18px;padding-left:22px;} .article-body li{margin-bottom:6px;}\n'+
+'  .article-body img{max-width:100%;border-radius:10px;margin:8px 0;} .article-body strong{color:var(--ink);}\n'+
+'  footer{border-top:1px solid var(--line);padding:26px 0 40px;margin-top:20px;}\n'+
+'  footer p{font-size:12px;color:var(--ink-faint);line-height:1.7;max-width:640px;margin:0 auto;padding:0 24px;}\n'+
+'</style>\n'+
+'</head>\n'+
+'<body>\n'+
+'<header><div class="bar"><div class="brand">คุ้มทุน<span style="color:var(--primary)">.</span></div><a class="back-link" href="../articles.html">← กลับไปหน้ารวมบทความ</a></div></header>\n'+
+'<div class="wrap">\n'+
+'  <div class="article-detail">\n'+
+'    <div class="date">'+escapeHtml(formatThaiDate(a.date))+'</div>\n'+
+'    <h1>'+escapeHtml(title)+'</h1>\n'+
+(a.coverImage ? '    <img class="cover" src="../'+a.coverImage+'" alt="'+escapeHtml(title)+'"/>\n' : '')+
+'    <div class="article-body">'+body+'</div>\n'+
+'  </div>\n'+
+'</div>\n'+
+'<footer><div class="wrap"><p>บทความนี้เขียนขึ้นเพื่อให้ความรู้ทั่วไปเกี่ยวกับการประหยัดพลังงานและทรัพยากรเท่านั้น ไม่ใช่คำแนะนำทางการเงินหรือวิศวกรรมเฉพาะกรณี ควรปรึกษาผู้เชี่ยวชาญก่อนตัดสินใจลงทุนจริง</p></div></footer>\n'+
+'</body>\n'+
+'</html>\n';
+  }
+
+  function downloadArticleHtml(a){
+    if(!a.title || !a.title.trim()){ alert('กรุณากรอกหัวข้อบทความก่อนดาวน์โหลด'); return; }
+    if(!a.slug){ a.slug = slugify(a.title) || a.id; renderArticles(); }
+    const html = buildArticleHtml(a);
+    const blob = new Blob([html], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = (a.slug||'article')+'.html';
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('articles-download-all-btn').addEventListener('click', async ()=>{
+    const valid = articles.filter(a=> a.title && a.title.trim());
+    if(valid.length===0){ alert('ยังไม่มีบทความที่กรอกหัวข้อไว้'); return; }
+    for(const a of valid){
+      if(!a.slug) a.slug = slugify(a.title) || a.id;
+      downloadArticleHtml(a);
+      await new Promise(r=> setTimeout(r, 400)); // เว้นจังหวะกันเบราว์เซอร์บล็อกดาวน์โหลดพร้อมกันหลายไฟล์
+    }
+    renderArticles();
+  });
+
   function buildArticlesConfig(){
     return {
       articles: articles
         .filter(a=> a.title && a.title.trim())
-        .map(a=> ({ id:a.id, title:a.title, excerpt:a.excerpt||'', date:a.date||'', coverImage:a.coverImage||'', content:autoParagraph(a.content||'') }))
+        .map(a=> {
+          const slug = a.slug || slugify(a.title) || a.id;
+          return { id:a.id, slug, title:a.title, excerpt:a.excerpt||'', date:a.date||'', coverImage:a.coverImage||'', content:a.content||'', link:'article/'+slug+'.html' };
+        })
     };
   }
 
@@ -699,7 +849,7 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
       try{
         const parsed = JSON.parse(ev.target.result);
         articles = (Array.isArray(parsed.articles) ? parsed.articles : []).map(a=> ({
-          id: a.id || newArticleId(), title:a.title||'', excerpt:a.excerpt||'', date:a.date||'',
+          id: a.id || newArticleId(), slug: a.slug||'', title:a.title||'', excerpt:a.excerpt||'', date:a.date||'',
           coverImage:a.coverImage||'', content:a.content||''
         }));
         renderArticles();
