@@ -45,6 +45,13 @@
   }
   .article-card-admin textarea.content-area{min-height:220px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.6;}
   .cover-preview{max-width:160px;border-radius:8px;display:block;margin-top:8px;}
+  .cover-input-row{display:flex;gap:8px;align-items:center;}
+  .cover-input-row input{flex:1;}
+  .cover-input-row .rm-btn{
+    flex-shrink:0;border:1px solid var(--line);background:var(--paper-raised);border-radius:8px;
+    width:34px;height:34px;color:var(--rust);cursor:pointer;font-size:14px;
+  }
+  .cover-input-row .rm-btn:hover{background:var(--rust-soft);}
 
   .steps{
     background:var(--primary-soft);border-radius:12px;padding:18px 20px;margin-bottom:32px;
@@ -580,9 +587,13 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
             '<div class="field"><label>วันที่เผยแพร่</label><input type="date" data-af="date" value="'+(a.date||'')+'"/></div>',
           '</div>',
           '<div class="field-row single"><div class="field"><label>เกริ่นนำ (แสดงในหน้ารวมบทความ)</label><textarea data-af="excerpt" rows="2" placeholder="สรุปสั้นๆ 1-2 ประโยค">'+(a.excerpt||'')+'</textarea></div></div>',
-          '<div class="field-row single"><div class="field"><label>รูปปก (ถ้ามี)</label>',
-            '<input type="file" accept="image/*" data-af-cover="'+i+'"/>',
-            (a.coverImage ? '<img class="cover-preview" src="'+a.coverImage+'" alt=""/>' : ''),
+          '<div class="field-row single"><div class="field"><label>รูปปก (พาธไฟล์ในโฟลเดอร์ pic/)</label>',
+            '<div class="cover-input-row">',
+              '<input type="text" data-af="coverImage" value="'+(a.coverImage||'').replace(/"/g,'&quot;')+'" placeholder="เช่น pic/cover1.jpg"/>',
+              '<button type="button" class="rm-btn" data-rm-cover="'+i+'" title="ลบรูปปก">✕</button>',
+            '</div>',
+            '<span class="note">อัปโหลดไฟล์ภาพไปที่โฟลเดอร์ <code>pic/</code> ใน GitHub repo ก่อน (Add file → Upload files → พิมพ์ชื่อโฟลเดอร์ pic/ นำหน้าตอนอัปโหลด) แล้วพิมพ์ชื่อไฟล์ (รวมนามสกุล) ที่ช่องนี้ — วิธีนี้ทำให้ไฟล์ articles-config.json มีขนาดเล็ก เว็บโหลดเร็วกว่าการฝังรูปเป็นไฟล์ใหญ่โดยตรง</span>',
+            (a.coverImage ? '<img class="cover-preview" src="'+a.coverImage+'" alt="" onerror="this.style.display=\'none\'"/>' : ''),
           '</div></div>',
           '<div class="field-row single"><div class="field"><label>เนื้อหาบทความ</label>',
             '<textarea class="content-area" data-af="content" placeholder="เขียนเป็นข้อความธรรมดาได้เลย (แต่ละย่อหน้าเว้นบรรทัดว่างคั่น) หรือใส่โค้ด HTML เอง เช่น &lt;h2&gt;หัวข้อย่อย&lt;/h2&gt; เพื่อจัดรูปแบบเพิ่มเติม">'+(a.content||'')+'</textarea>',
@@ -605,17 +616,32 @@ document.getElementById('lock-password').addEventListener('keydown', e=>{
         renderArticles();
       });
     });
-    container.querySelectorAll('[data-af-cover]').forEach(input=>{
-      input.addEventListener('change', e=>{
-        const idx = +e.target.dataset.afCover;
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = ev=>{
-          articles[idx].coverImage = ev.target.result;
-          renderArticles();
-        };
-        reader.readAsDataURL(file);
+    container.querySelectorAll('[data-af="coverImage"]').forEach(input=>{
+      input.addEventListener('input', e=>{
+        const field = e.target.closest('.field');
+        const existingImg = field.querySelector('.cover-preview');
+        const val = e.target.value.trim();
+        if(val){
+          if(existingImg){
+            existingImg.src = val; existingImg.style.display = '';
+          } else {
+            const img = document.createElement('img');
+            img.className = 'cover-preview';
+            img.src = val;
+            img.onerror = function(){ this.style.display='none'; };
+            img.onload = function(){ this.style.display=''; };
+            field.appendChild(img);
+          }
+        } else if(existingImg){
+          existingImg.remove();
+        }
+      });
+    });
+    container.querySelectorAll('[data-rm-cover]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        const idx = +e.target.dataset.rmCover;
+        articles[idx].coverImage = '';
+        renderArticles();
       });
     });
   }
