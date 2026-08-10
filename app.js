@@ -225,6 +225,15 @@
         <h3>สรุปสมมติฐานที่ใช้คำนวณ</h3>
         <div class="grid" id="print-summary-grid"></div>
       </div>
+      <div class="print-summary" id="print-savings-summary" style="display:none;">
+        <h3>สรุปผลการประหยัด</h3>
+        <div class="grid" id="print-savings-grid"></div>
+      </div>
+      <div class="print-summary" id="print-sub-summary" style="display:none;">
+        <h3>เปรียบเทียบกับ Subscription / BOO / PPA</h3>
+        <div class="grid" id="print-sub-grid"></div>
+        <p id="print-sub-conclusion" style="font-family:'JetBrains Mono',monospace;font-size:11.5px;margin-top:10px;line-height:1.6;"></p>
+      </div>
 
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
@@ -408,6 +417,7 @@
 
   let activeTab = 'solar';
   let vehicleSalvageOverrideBaht = null; // มูลค่าซากที่คำนวณจากราคาขายคืนจริง (ใช้แทน % เมื่ออยู่ในแท็บรถยนต์)
+  let lastSubCompare = null; // ผลเปรียบเทียบ Subscription/PPA ล่าสุดจาก calculate() — ใช้ซ้ำตอน export PDF กันคำนวณซ้ำ
 
   /* ---------------- Build tabs ---------------- */
   const tabsEl = document.getElementById('tabs');
@@ -2053,6 +2063,14 @@
       const rEvents = getEventsFromContainer('h-repair-rows');
       if(rEvents.length>0) items.push(['ค่าอะไหล่รถเดิมที่ประหยัดได้', rEvents.map(e=>'ปี '+e.year+': '+fmt0(e.amount)+' บาท').join(', ')]);
     }
+    if(EQUIPMENT[activeTab].subcalc==='led'){
+      const lifespanForEvents = Math.max(parseInt(val('f-lifespan'))||1,1);
+      const sellYearForEvents = parseInt(val('f-sell-year'))||lifespanForEvents;
+      const effectiveYearsForEvents = Math.min(Math.max(sellYearForEvents,1), lifespanForEvents);
+      const ledEvents = getLedReplacementEvents(effectiveYearsForEvents);
+      if(ledEvents.avoided.length>0) items.push(['ปีที่ประหยัดได้จากไม่ต้องซื้อหลอดเดิม', ledEvents.avoided.map(e=>'ปี '+e.year+': '+fmt0(e.amount)+' บาท').join(', ')]);
+      if(ledEvents.replace.length>0) items.push(['ปีที่ต้องซื้อหลอด LED ทดแทน', ledEvents.replace.map(e=>'ปี '+e.year+': '+fmt0(e.amount)+' บาท').join(', ')]);
+    }
     if(!isWaterCalc){
       items.push(['อัตราค่าไฟฟ้าปัจจุบัน', val('f-elec-rate')+' บาท/หน่วย']);
     }
@@ -2075,6 +2093,41 @@
     document.getElementById('print-summary-grid').innerHTML = items.map(([k,v])=>
       '<div class="item"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'
     ).join('');
+
+    // สรุปผลการประหยัด — ดึงจากการ์ด KPI ที่คำนวณไว้แล้วบนหน้าจอ (ข้อความล้วน อ่านง่ายในกระดาษแม้ไม่เห็นการ์ดสี)
+    const kpiText = id => { const el = document.getElementById(id); return el ? el.innerText.replace(/\s+/g,' ').trim() : '—'; };
+    const savingsItems = [
+      ['คืนทุนแบบธรรมดา', kpiText('kpi-payback')],
+      ['คืนทุนแบบคิดลด', kpiText('kpi-dpayback')],
+      ['ROI ตลอดอายุใช้งาน', kpiText('kpi-roi')],
+      ['NPV (มูลค่าปัจจุบันสุทธิ)', kpiText('kpi-npv')],
+      ['IRR (อัตราผลตอบแทน)', kpiText('kpi-irr')],
+      ['ประหยัดรวมตลอดอายุ', kpiText('kpi-total-savings')],
+      [document.getElementById('kpi-co2-label').textContent, kpiText('kpi-co2')],
+      ['ประหยัดเดือนแรก', kpiText('kpi-monthly')],
+    ];
+    document.getElementById('print-savings-grid').innerHTML = savingsItems.map(([k,v])=>
+      '<div class="item"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'
+    ).join('');
+    document.getElementById('print-savings-summary').style.display = 'block';
+
+    // เปรียบเทียบกับ Subscription/PPA (ถ้าเปิดใช้งาน) — ใช้ผลลัพธ์ล่าสุดที่ calculate() คำนวณเก็บไว้แล้ว
+    if(lastSubCompare){
+      const subItems = [
+        ['รูปแบบการจ่าย', lastSubCompare.type==='fixed' ? 'จ่ายคงที่รายเดือน' : 'จ่ายตามปริมาณหน่วยไฟ/น้ำที่ผลิต/ใช้จริง'],
+        ['ค่าบริการ', fmt0(lastSubCompare.monthlyCost)+' บาท/เดือน'+(lastSubCompare.outputInfo ? ' (จาก ~'+fmt0(lastSubCompare.outputInfo.units)+' '+lastSubCompare.outputInfo.label+')' : '')],
+        ['ซื้อขาดสะสมเมื่อครบ '+lastSubCompare.years+' ปี', fmt0(lastSubCompare.finalBuy)+' บาท'],
+        ['Subscription สะสมเมื่อครบ '+lastSubCompare.years+' ปี', fmt0(lastSubCompare.finalSub)+' บาท'],
+      ];
+      document.getElementById('print-sub-grid').innerHTML = subItems.map(([k,v])=>
+        '<div class="item"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'
+      ).join('');
+      document.getElementById('print-sub-conclusion').innerHTML =
+        '<b>'+lastSubCompare.winner+'</b> ให้ผลตอบแทนสุทธิดีกว่า ~'+fmt0(Math.abs(lastSubCompare.diff))+' บาท เมื่อครบระยะเวลาวิเคราะห์ (Subscription/PPA ไม่ต้องใช้เงินลงทุนก้อนแรกเลย ต่างจากซื้อขาดที่ต้องจ่ายเงินลงทุนตั้งแต่ปีที่ 0)';
+      document.getElementById('print-sub-summary').style.display = 'block';
+    } else {
+      document.getElementById('print-sub-summary').style.display = 'none';
+    }
 
     window.print();
   }
@@ -2349,9 +2402,16 @@
       summaryEl.style.cssText = 'margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);';
       summaryEl.innerHTML = summary;
       document.getElementById('sub-preview').appendChild(summaryEl);
+      lastSubCompare = {
+        type: document.getElementById('f-sub-type').value,
+        monthlyCost: subInfo.monthlyCost,
+        outputInfo: subInfo.outputInfo,
+        years: effectiveYears, finalBuy, finalSub, diff, winner
+      };
     } else {
       const existingSummary = document.getElementById('sub-compare-summary');
       if(existingSummary) existingSummary.remove();
+      lastSubCompare = null;
     }
   }
 
