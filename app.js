@@ -81,7 +81,7 @@
         </div>
 
         <div style="border-top:1px dashed var(--line);margin-top:14px;padding-top:14px;">
-          <span><b>เงินลงทุนเพิ่มเติม ค่าเปลี่ยนอะไหล่/บำรุงรักษาใหญ่ ที่ไม่ใช่วัสดุสิ้นเปลือง</b> — เช่น เปลี่ยนชิ้นส่วนหลัก, ส่วนโครงสร้าง, อินเวอร์เตอร์, แบตเตอรี่หลัก (ถ้ามี)</span>
+          <span style="font-size:13px;font-weight:600;color:var(--primary-dark);"><b>เงินลงทุนเพิ่มเติม ค่าเปลี่ยนอะไหล่/บำรุงรักษาใหญ่ ที่ไม่ใช่วัสดุสิ้นเปลือง</b> — เช่น เปลี่ยนชิ้นส่วนหลัก, ส่วนโครงสร้าง, อินเวอร์เตอร์, แบตเตอรี่หลัก (ถ้ามี)</span>
         </div>
         <div style="padding-top:10px;">
           <div id="capex-rows"></div>
@@ -705,7 +705,7 @@
         '<div class="field-row single">',
           '<div class="field"><label>ค่าไฟชาร์จสาธารณะ/หัวชาร์จเร็ว <span class="hint">บาท/หน่วย</span></label><input type="number" id="v-public-rate" value="7.5" min="0" step="0.1"/></div>',
         '</div>',
-        '<span class="note">ค่าไฟชาร์จที่บ้านใช้อัตราค่าไฟฟ้าปัจจุบันในหัวข้อ “ค่าไฟฟ้าและพลังงาน” ด้านล่าง</span>',
+        '<span class="note" style="margin-top:6px;">ค่าไฟชาร์จที่บ้านใช้อัตราค่าไฟฟ้าปัจจุบันในหัวข้อ “ค่าไฟฟ้าและพลังงาน” ด้านล่าง</span>',
         '<div class="sub-preview" id="v-bev-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
       ].join('');
       document.getElementById('v-compare-mode').addEventListener('change', function(){
@@ -833,7 +833,7 @@
             '<div class="field"><label>สัดส่วนชาร์จที่บ้าน <span class="hint">%</span></label><input type="number" id="h-home-share" value="80" min="0" max="100"/></div>',
             '<div class="field"><label>ค่าไฟชาร์จสาธารณะ/หัวชาร์จเร็ว <span class="hint">บาท/หน่วย</span></label><input type="number" id="h-public-rate" value="7.5" min="0" step="0.1"/></div>',
           '</div>',
-          '<span class="note">ค่าไฟชาร์จที่บ้านใช้อัตราค่าไฟฟ้าปัจจุบันในหัวข้อ “ค่าไฟฟ้าและพลังงาน” ด้านล่าง — ระยะทางส่วนที่เหลือ (ไม่ใช่ไฟฟ้าล้วน) จะใช้อัตราสิ้นเปลือง “โหมดน้ำมัน” ด้านบนตามปกติ</span>',
+          '<span class="note" style="margin-top:6px;">ค่าไฟชาร์จที่บ้านใช้อัตราค่าไฟฟ้าปัจจุบันในหัวข้อ “ค่าไฟฟ้าและพลังงาน” ด้านล่าง — ระยะทางส่วนที่เหลือ (ไม่ใช่ไฟฟ้าล้วน) จะใช้อัตราสิ้นเปลือง “โหมดน้ำมัน” ด้านบนตามปกติ</span>',
         '</div>',
         '<span class="note">CO2 คำนวณจากปริมาณน้ำมันที่ประหยัด/ใช้จริง (~2.31 kgCO2/ลิตร) รวมกับ CO2 จากไฟฟ้าที่ใช้ชาร์จ (ถ้าเป็น PHEV)</span>',
         '<div class="sub-preview" id="v-hybrid-preview">ประหยัดโดยประมาณ: — บาท/เดือน</div>'
