@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: https://www.kumtun.com/admin.html
+Sitemap: https://www.kumtun.com/sitemap.xml
