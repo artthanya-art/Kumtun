@@ -96,42 +96,6 @@
       </div>
 
       <div class="panel">
-        <h2>เทียบกับ Subscription / BOO / PPA</h2>
-        <p class="desc">เปรียบเทียบการซื้อขาด (ด้านบน) กับรูปแบบไม่ต้องลงทุนเอง จ่ายเป็นค่าบริการรายเดือนหรือตามปริมาณที่ใช้จริงแทน (เช่น โซลาร์เช่า/PPA, ระบบน้ำแบบ BOO)</p>
-
-        <div class="toggle-row" id="f-sub-toggle-row">
-          <input type="checkbox" id="f-sub-enabled" />
-          <label for="f-sub-enabled">เปิดเปรียบเทียบกับ Subscription/BOO/PPA</label>
-        </div>
-
-        <div id="sub-fields" style="display:none;">
-          <div class="field-row single">
-            <div class="field">
-              <label>รูปแบบการจ่ายค่าบริการ</label>
-              <select id="f-sub-type">
-                <option value="fixed">จ่ายคงที่รายเดือน</option>
-                <option value="perunit">จ่ายตามปริมาณหน่วยไฟ/น้ำที่ผลิต/ใช้ได้จริง</option>
-              </select>
-            </div>
-          </div>
-          <div class="field-row single" id="f-sub-fixed-wrap">
-            <div class="field">
-              <label>ค่าบริการคงที่ <span class="hint">บาท/เดือน</span></label>
-              <input type="number" id="f-sub-fixed-rate" value="2000" min="0" />
-            </div>
-          </div>
-          <div class="field-row single" id="f-sub-perunit-wrap" style="display:none;">
-            <div class="field">
-              <label>อัตราค่าบริการต่อหน่วย <span class="hint">บาท/หน่วย</span></label>
-              <input type="number" id="f-sub-perunit-rate" value="3.5" min="0" step="0.1" />
-              <span class="note">คูณกับปริมาณหน่วยไฟ/น้ำที่อุปกรณ์นี้ผลิต/ประหยัดได้จริงต่อเดือน (เช่น PPA โซลาร์จ่ายตามหน่วยไฟที่ผลิตได้จริง — หน่วยจะต่างกันตามประเภทอุปกรณ์ ดูหน่วยที่ระบุในกล่องสรุปด้านล่าง)</span>
-            </div>
-          </div>
-          <div class="sub-preview" id="sub-preview">—</div>
-        </div>
-      </div>
-
-      <div class="panel">
         <h2 id="energy-panel-title">ค่าไฟฟ้าและพลังงาน</h2>
         <p class="desc" id="energy-panel-desc">ใช้คำนวณมูลค่าเงินที่ประหยัดได้ และปริมาณ CO2 ที่ลดได้</p>
         <div class="field-row">
@@ -209,6 +173,42 @@
               <span class="note">ค่าเริ่มต้นอ้างอิงค่าเฉลี่ยระบบไฟฟ้าไทย (Grid Emission Factor)</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>เทียบกับ Subscription / BOO / PPA</h2>
+        <p class="desc">เปรียบเทียบการซื้อขาด (ด้านบน) กับรูปแบบไม่ต้องลงทุนเอง จ่ายเป็นค่าบริการรายเดือนหรือตามปริมาณที่ใช้จริงแทน (เช่น โซลาร์เช่า/PPA, ระบบน้ำแบบ BOO)</p>
+
+        <div class="toggle-row" id="f-sub-toggle-row">
+          <input type="checkbox" id="f-sub-enabled" />
+          <label for="f-sub-enabled">เปิดเปรียบเทียบกับ Subscription/BOO/PPA</label>
+        </div>
+
+        <div id="sub-fields" style="display:none;">
+          <div class="field-row single">
+            <div class="field">
+              <label>รูปแบบการจ่ายค่าบริการ</label>
+              <select id="f-sub-type">
+                <option value="fixed">จ่ายคงที่รายเดือน</option>
+                <option value="perunit">จ่ายตามปริมาณหน่วยไฟ/น้ำที่ผลิต/ใช้ได้จริง</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row single" id="f-sub-fixed-wrap">
+            <div class="field">
+              <label>ค่าบริการคงที่ <span class="hint">บาท/เดือน</span></label>
+              <input type="number" id="f-sub-fixed-rate" value="2000" min="0" />
+            </div>
+          </div>
+          <div class="field-row single" id="f-sub-perunit-wrap" style="display:none;">
+            <div class="field">
+              <label>อัตราค่าบริการต่อหน่วย <span class="hint">บาท/หน่วย</span></label>
+              <input type="number" id="f-sub-perunit-rate" value="3.5" min="0" step="0.1" />
+              <span class="note">คูณกับปริมาณหน่วยไฟ/น้ำที่อุปกรณ์นี้ผลิต/ประหยัดได้จริงต่อเดือน (เช่น PPA โซลาร์จ่ายตามหน่วยไฟที่ผลิตได้จริง — หน่วยจะต่างกันตามประเภทอุปกรณ์ ดูหน่วยที่ระบุในกล่องสรุปด้านล่าง)</span>
+            </div>
+          </div>
+          <div class="sub-preview" id="sub-preview">—</div>
         </div>
       </div>
 
