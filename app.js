@@ -80,11 +80,10 @@
           </div>
         </div>
 
-        <div class="advanced-toggle" id="capex-toggle" style="border-top:1px dashed var(--line);margin-top:14px;padding-top:14px;">
-          <span><b>ค่าเปลี่ยนอะไหล่/บำรุงรักษาใหญ่ระหว่างทาง</b> — เช่น เปลี่ยนเมมเบรน, อินเวอร์เตอร์, แบตเตอรี่ (ถ้ามี)</span>
-          <span class="chev" id="capex-chev">›</span>
+        <div style="border-top:1px dashed var(--line);margin-top:14px;padding-top:14px;">
+          <span><b>เงินลงทุนเพิ่มเติม ค่าเปลี่ยนอะไหล่/บำรุงรักษาใหญ่ ที่ไม่ใช่วัสดุสิ้นเปลือง</b> — เช่น เปลี่ยนชิ้นส่วนหลัก, ส่วนโครงสร้าง, อินเวอร์เตอร์, แบตเตอรี่หลัก (ถ้ามี)</span>
         </div>
-        <div class="advanced-body" id="capex-body" style="border-top:none;padding-top:0;">
+        <div style="padding-top:10px;">
           <div id="capex-rows"></div>
           <div class="period-actions">
             <button type="button" class="btn-add-period" id="capex-add-btn">+ เพิ่มรายการ</button>
@@ -655,7 +654,8 @@
         '<div id="v-ice-fields" class="ref-box">',
           '<div class="ref-box-label">ข้อมูลอ้างอิง — รถที่เอามาเปรียบเทียบ (ไม่ใช่รถ BEV)</div>',
           '<div class="field-row">',
-            '<div class="field"><label>ราคารถน้ำมันที่เทียบเคียง <span class="hint">บาท</span></label><input type="number" id="v-ref-price" value="650000" min="0"/></div>',
+            '<div class="field"><label>ราคารถน้ำมันที่เทียบเคียง <span class="hint">บาท</span></label><input type="number" id="v-ref-price" value="650000" min="0"/>',
+            '<span class="note">ถ้าเป็นรถมือสอง ให้รวมค่าซ่อม/อะไหล่ที่คาดว่าต้องเปลี่ยนเข้าไปในราคานี้ด้วย เพื่อให้เทียบกันได้ตรงจริง</span></div>',
             '<div class="field"><label>ราคาขายเมื่อถือครองครบเท่ากัน <span class="hint">บาท</span></label><input type="number" id="v-ref-resale" value="150000" min="0"/></div>',
           '</div>',
           '<div class="field-row single">',
@@ -769,7 +769,8 @@
         '<div id="h-ice-fields" class="ref-box">',
           '<div class="ref-box-label">ข้อมูลอ้างอิง — รถที่เอามาเปรียบเทียบ (ไม่ใช่รถไฮบริด)</div>',
           '<div class="field-row">',
-            '<div class="field"><label>ราคารถรุ่นเครื่องยนต์ปกติ <span class="hint">บาท</span></label><input type="number" id="h-ref-price" value="750000" min="0"/></div>',
+            '<div class="field"><label>ราคารถรุ่นเครื่องยนต์ปกติ <span class="hint">บาท</span></label><input type="number" id="h-ref-price" value="750000" min="0"/>',
+            '<span class="note">ถ้าเป็นรถมือสอง ให้รวมค่าซ่อม/อะไหล่ที่คาดว่าต้องเปลี่ยนเข้าไปในราคานี้ด้วย เพื่อให้เทียบกันได้ตรงจริง</span></div>',
             '<div class="field"><label>ราคาขายเมื่อถือครองครบเท่ากัน <span class="hint">บาท</span></label><input type="number" id="h-ref-resale" value="200000" min="0"/></div>',
           '</div>',
           '<div class="field-row single">',
@@ -1996,12 +1997,6 @@
   document.getElementById('advanced-toggle').addEventListener('click', function(){
     const body = document.getElementById('advanced-body');
     const chev = document.getElementById('advanced-chev');
-    body.classList.toggle('open');
-    chev.classList.toggle('open');
-  });
-  document.getElementById('capex-toggle').addEventListener('click', function(){
-    const body = document.getElementById('capex-body');
-    const chev = document.getElementById('capex-chev');
     body.classList.toggle('open');
     chev.classList.toggle('open');
   });
