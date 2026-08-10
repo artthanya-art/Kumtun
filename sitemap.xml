@@ -8,4 +8,24 @@
        <changefreq>daily</changefreq>
        <priority>1.0000</priority>
   </url>
+  <url>
+       <loc>https://www.kumtun.com/article/Solar1.html</loc>
+       <lastmod>2026-08-10T15:02:23+00:00</lastmod>
+       <changefreq>monthly</changefreq>
+       <priority>1.0000</priority>
+  </url>
+  <url>
+       <loc>https://www.kumtun.com/article/led-bulb-investment.html</loc>
+       <lastmod>2026-08-10T15:02:23+00:00</lastmod>
+       <changefreq>monthly</changefreq>
+       <priority>1.0000</priority>
+  </url>
+  <url>
+       <loc>https://www.kumtun.com/article/Check%20before%20subscription.html</loc>
+       <lastmod>2026-08-10T15:02:23+00:00</lastmod>
+       <changefreq>monthly</changefreq>
+       <priority>1.0000</priority>
+  </url>
+
+  
 </urlset>
